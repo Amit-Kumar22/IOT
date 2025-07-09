@@ -1,37 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'company' | 'consumer';
-  companyId?: string;
-  permissions: string[];
-  avatar?: string;
-  createdAt: string;
-  lastLoginAt?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  loginAttempts: number;
-  lastLoginAttempt?: string;
-  sessionExpiry?: string;
-}
+import { User, AuthState, AuthTokens } from '@/types/auth';
 
 const initialState: AuthState = {
   user: null,
-  token: null,
-  refreshToken: null,
+  tokens: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
-  loginAttempts: 0,
+  sessionId: undefined,
+  lastActivity: undefined,
 };
 
 const authSlice = createSlice({
@@ -43,71 +20,163 @@ const authSlice = createSlice({
       state.isLoading = true;
       state.error = null;
     },
-    loginSuccess: (state, action: PayloadAction<{ user: User; token: string; refreshToken: string }>) => {
+    loginSuccess: (state, action: PayloadAction<{ user: User; tokens: AuthTokens; sessionId: string }>) => {
       state.isLoading = false;
       state.isAuthenticated = true;
       state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.refreshToken = action.payload.refreshToken;
+      state.tokens = action.payload.tokens;
+      state.sessionId = action.payload.sessionId;
       state.error = null;
-      state.loginAttempts = 0;
-      state.lastLoginAttempt = new Date().toISOString();
+      state.lastActivity = new Date().toISOString();
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
       state.isAuthenticated = false;
       state.user = null;
-      state.token = null;
-      state.refreshToken = null;
+      state.tokens = null;
+      state.sessionId = undefined;
       state.error = action.payload;
-      state.loginAttempts += 1;
-      state.lastLoginAttempt = new Date().toISOString();
     },
     logout: (state) => {
       state.user = null;
-      state.token = null;
-      state.refreshToken = null;
+      state.tokens = null;
       state.isAuthenticated = false;
       state.error = null;
-      state.loginAttempts = 0;
-      state.sessionExpiry = undefined;
+      state.sessionId = undefined;
+      state.lastActivity = undefined;
     },
+    
+    // Registration actions
+    registerStart: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    registerSuccess: (state, action: PayloadAction<{ user: User; tokens: AuthTokens; sessionId: string }>) => {
+      state.isLoading = false;
+      state.isAuthenticated = true;
+      state.user = action.payload.user;
+      state.tokens = action.payload.tokens;
+      state.sessionId = action.payload.sessionId;
+      state.error = null;
+      state.lastActivity = new Date().toISOString();
+    },
+    registerFailure: (state, action: PayloadAction<string>) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+    
     // Token management
     refreshTokenStart: (state) => {
       state.isLoading = true;
     },
-    refreshTokenSuccess: (state, action: PayloadAction<{ token: string; refreshToken: string }>) => {
+    refreshTokenSuccess: (state, action: PayloadAction<{ tokens: AuthTokens; user?: User }>) => {
       state.isLoading = false;
-      state.token = action.payload.token;
-      state.refreshToken = action.payload.refreshToken;
+      state.tokens = action.payload.tokens;
+      if (action.payload.user) {
+        state.user = action.payload.user;
+      }
       state.error = null;
+      state.lastActivity = new Date().toISOString();
     },
     refreshTokenFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
       state.error = action.payload;
       // Force logout on refresh token failure
       state.user = null;
-      state.token = null;
-      state.refreshToken = null;
+      state.tokens = null;
       state.isAuthenticated = false;
+      state.sessionId = undefined;
     },
+    
     // User profile updates
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
     },
+    
     // Session management
-    setSessionExpiry: (state, action: PayloadAction<string>) => {
-      state.sessionExpiry = action.payload;
+    updateLastActivity: (state) => {
+      state.lastActivity = new Date().toISOString();
     },
+    
+    setSessionId: (state, action: PayloadAction<string>) => {
+      state.sessionId = action.payload;
+    },
+    
+    // Error management
     clearError: (state) => {
       state.error = null;
     },
-    // Reset login attempts (for admin or after successful login)
-    resetLoginAttempts: (state) => {
-      state.loginAttempts = 0;
+    
+    setError: (state, action: PayloadAction<string>) => {
+      state.error = action.payload;
     },
+    
+    // Session expiry handling
+    sessionExpired: (state) => {
+      state.user = null;
+      state.tokens = null;
+      state.isAuthenticated = false;
+      state.sessionId = undefined;
+      state.error = 'Your session has expired. Please log in again.';
+    },
+    
+    // Password reset actions
+    passwordResetStart: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    passwordResetSuccess: (state) => {
+      state.isLoading = false;
+      state.error = null;
+    },
+    passwordResetFailure: (state, action: PayloadAction<string>) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+    
+    // Email verification
+    emailVerificationStart: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    emailVerificationSuccess: (state) => {
+      state.isLoading = false;
+      if (state.user) {
+        state.user.emailVerified = true;
+      }
+      state.error = null;
+    },
+    emailVerificationFailure: (state, action: PayloadAction<string>) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+    
+    // Rehydration from persistence
+    rehydrateAuth: (state, action: PayloadAction<AuthState>) => {
+      const { user, tokens, isAuthenticated, sessionId, lastActivity } = action.payload;
+      
+      // Only rehydrate if we have valid user and tokens
+      if (user && tokens && isAuthenticated) {
+        state.user = user;
+        state.tokens = tokens;
+        state.isAuthenticated = isAuthenticated;
+        state.sessionId = sessionId;
+        state.lastActivity = lastActivity;
+        
+        // Check if tokens are expired
+        const now = Math.floor(Date.now() / 1000);
+        if (tokens.expiresAt <= now) {
+          // Token expired, clear state
+          state.user = null;
+          state.tokens = null;
+          state.isAuthenticated = false;
+          state.sessionId = undefined;
+          state.error = 'Your session has expired. Please log in again.';
+        }
+      }
+    }
   },
 });
 
@@ -116,18 +185,30 @@ export const {
   loginSuccess,
   loginFailure,
   logout,
+  registerStart,
+  registerSuccess,
+  registerFailure,
   refreshTokenStart,
   refreshTokenSuccess,
   refreshTokenFailure,
   updateUserProfile,
-  setSessionExpiry,
+  updateLastActivity,
+  setSessionId,
   clearError,
-  resetLoginAttempts,
+  setError,
+  sessionExpired,
+  passwordResetStart,
+  passwordResetSuccess,
+  passwordResetFailure,
+  emailVerificationStart,
+  emailVerificationSuccess,
+  emailVerificationFailure,
+  rehydrateAuth,
 } = authSlice.actions;
 
 export default authSlice.reducer;
 
-// Selectors
+// Enhanced Selectors
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
@@ -135,4 +216,43 @@ export const selectAuthLoading = (state: { auth: AuthState }) => state.auth.isLo
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error;
 export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.role;
 export const selectUserPermissions = (state: { auth: AuthState }) => state.auth.user?.permissions || [];
-export const selectLoginAttempts = (state: { auth: AuthState }) => state.auth.loginAttempts;
+export const selectTokens = (state: { auth: AuthState }) => state.auth.tokens;
+export const selectAccessToken = (state: { auth: AuthState }) => state.auth.tokens?.accessToken;
+export const selectSessionId = (state: { auth: AuthState }) => state.auth.sessionId;
+export const selectLastActivity = (state: { auth: AuthState }) => state.auth.lastActivity;
+
+// Computed selectors
+export const selectIsTokenExpired = (state: { auth: AuthState }) => {
+  const tokens = state.auth.tokens;
+  if (!tokens) return true;
+  
+  const now = Math.floor(Date.now() / 1000);
+  return tokens.expiresAt <= now;
+};
+
+export const selectTimeUntilTokenExpiry = (state: { auth: AuthState }) => {
+  const tokens = state.auth.tokens;
+  if (!tokens) return 0;
+  
+  const now = Math.floor(Date.now() / 1000);
+  return Math.max(0, tokens.expiresAt - now);
+};
+
+export const selectCanAccess = (requiredRole: string[]) => (state: { auth: AuthState }) => {
+  const userRole = state.auth.user?.role;
+  if (!userRole) return false;
+  
+  // Admin can access everything
+  if (userRole === 'admin') return true;
+  
+  return requiredRole.includes(userRole);
+};
+
+export const selectHasPermission = (permission: string) => (state: { auth: AuthState }) => {
+  const permissions = state.auth.user?.permissions || [];
+  
+  // Admin has all permissions
+  if (permissions.includes('*')) return true;
+  
+  return permissions.includes(permission);
+};

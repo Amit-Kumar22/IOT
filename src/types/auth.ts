@@ -78,3 +78,138 @@ export interface Permission {
   resource: string;
   action: string;
 }
+
+// JWT-specific types
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+  companyId?: string;
+  permissions: string[];
+  iat: number;
+  exp: number;
+  jti?: string; // JWT ID for token tracking
+}
+
+// Session management
+export interface Session {
+  id: string;
+  userId: string;
+  token: string;
+  refreshToken: string;
+  expiresAt: Date;
+  lastActivity: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  isActive: boolean;
+}
+
+// Auth state for Redux
+export interface AuthState {
+  user: User | null;
+  tokens: AuthTokens | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  sessionId?: string;
+  lastActivity?: string;
+}
+
+// Role-based access control
+export interface RolePermissions {
+  read: string[];
+  write: string[];
+  delete: string[];
+  admin: string[];
+}
+
+export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
+  admin: {
+    read: ['*'],
+    write: ['*'],
+    delete: ['*'],
+    admin: ['*']
+  },
+  company: {
+    read: ['devices', 'analytics', 'billing', 'profile', 'company'],
+    write: ['devices', 'profile', 'company'],
+    delete: ['devices'],
+    admin: ['company']
+  },
+  consumer: {
+    read: ['devices', 'profile', 'analytics'],
+    write: ['devices', 'profile'],
+    delete: [],
+    admin: []
+  }
+};
+
+// Form validation types
+export interface FormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  name?: string;
+  companyName?: string;
+  general?: string;
+}
+
+// Authentication events for audit logging
+export type AuthEvent = 
+  | 'LOGIN_ATTEMPT'
+  | 'LOGIN_SUCCESS'
+  | 'LOGIN_FAILURE'
+  | 'LOGOUT'
+  | 'TOKEN_REFRESH'
+  | 'SESSION_EXPIRED'
+  | 'PASSWORD_RESET_REQUEST'
+  | 'PASSWORD_CHANGED'
+  | 'ACCOUNT_LOCKED'
+  | 'EMAIL_VERIFIED'
+  | 'TWO_FACTOR_ENABLED'
+  | 'TWO_FACTOR_DISABLED';
+
+export interface AuthEventData {
+  event: AuthEvent;
+  userId?: string;
+  timestamp: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  success: boolean;
+  metadata?: Record<string, any>;
+}
+
+// Password validation
+export interface PasswordRequirements {
+  minLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
+}
+
+export const DEFAULT_PASSWORD_REQUIREMENTS: PasswordRequirements = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumbers: true,
+  requireSpecialChars: true
+};
+
+// Rate limiting types
+export interface RateLimitInfo {
+  attempts: number;
+  resetTime: Date;
+  blocked: boolean;
+}
+
+// API response enhancements
+export interface RefreshTokenResponse {
+  tokens: AuthTokens;
+  user?: User; // In case user data needs updating
+}
+
+export interface LogoutResponse {
+  message: string;
+  loggedOut: boolean;
+}
