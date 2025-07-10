@@ -112,13 +112,13 @@ export default function LoginPage() {
   const getDashboardPath = (role: string): string => {
     switch (role) {
       case 'admin':
-        return '/admin/dashboard';
+        return '/admin';
       case 'company':
-        return '/company/devices';
+        return '/company';
       case 'consumer':
-        return '/consumer/devices';
+        return '/consumer';
       default:
-        return '/';
+        return '/dashboard';
     }
   };
 

@@ -16,9 +16,15 @@ interface ConsumerLayoutProps {
 
 const consumerNavigation = [
   {
+    name: 'Dashboard',
+    href: '/consumer',
+    icon: HomeIcon,
+    current: false,
+  },
+  {
     name: 'My Devices',
     href: '/consumer/devices',
-    icon: HomeIcon,
+    icon: CogIcon,
     current: false,
   },
   {

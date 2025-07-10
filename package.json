@@ -13,11 +13,13 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@reduxjs/toolkit": "^2.8.2",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
+    "isomorphic-dompurify": "^2.26.0",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
     "next": "15.3.5",

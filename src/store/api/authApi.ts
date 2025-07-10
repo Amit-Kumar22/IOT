@@ -1,73 +1,25 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'admin' | 'company' | 'consumer';
-    companyId?: string;
-    permissions: string[];
-    avatar?: string;
-    createdAt: string;
-    lastLoginAt?: string;
-  };
-  token: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string;
-  role: 'company' | 'consumer';
-  companyName?: string;
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
-export interface RefreshTokenResponse {
-  token: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  token: string;
-  password: string;
-}
-
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}
-
-export interface UpdateProfileRequest {
-  name?: string;
-  email?: string;
-  avatar?: string;
-}
+import type { 
+  LoginCredentials, 
+  RegisterData, 
+  AuthResponse, 
+  RefreshTokenResponse, 
+  PasswordResetRequest, 
+  PasswordReset, 
+  ChangePassword, 
+  UpdateProfile,
+  User,
+  AuthTokens
+} from '@/types/auth';
+import type { RootState } from '@/store';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/auth',
     prepareHeaders: (headers, { getState }) => {
-      const state = getState() as any;
-      const token = state.auth?.token;
+      const state = getState() as RootState;
+      const token = state.auth?.tokens?.accessToken;
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -75,19 +27,19 @@ export const authApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Auth', 'User', 'Profile'],
+  tagTypes: ['Auth', 'User', 'Profile', 'Session'],
   endpoints: (builder) => ({
     // Authentication endpoints
-    login: builder.mutation<LoginResponse, LoginRequest>({
+    login: builder.mutation<AuthResponse & { sessionId: string }, LoginCredentials>({
       query: (credentials) => ({
         url: '/login',
         method: 'POST',
         body: credentials,
       }),
-      invalidatesTags: ['Auth', 'Profile'],
+      invalidatesTags: ['Auth', 'Profile', 'Session'],
     }),
     
-    register: builder.mutation<LoginResponse, RegisterRequest>({
+    register: builder.mutation<AuthResponse & { sessionId: string }, RegisterData>({
       query: (userData) => ({
         url: '/register',
         method: 'POST',
@@ -96,24 +48,24 @@ export const authApi = createApi({
       invalidatesTags: ['Auth'],
     }),
     
-    logout: builder.mutation<void, void>({
+    logout: builder.mutation<{ message: string; loggedOut: boolean }, void>({
       query: () => ({
         url: '/logout',
         method: 'POST',
       }),
-      invalidatesTags: ['Auth', 'User', 'Profile'],
+      invalidatesTags: ['Auth', 'User', 'Profile', 'Session'],
     }),
     
-    refreshToken: builder.mutation<RefreshTokenResponse, RefreshTokenRequest>({
-      query: (refreshData) => ({
+    refreshToken: builder.mutation<RefreshTokenResponse, void>({
+      query: () => ({
         url: '/refresh',
         method: 'POST',
-        body: refreshData,
       }),
+      invalidatesTags: ['Session'],
     }),
     
     // Password management
-    forgotPassword: builder.mutation<{ message: string }, ForgotPasswordRequest>({
+    forgotPassword: builder.mutation<{ message: string }, PasswordResetRequest>({
       query: (emailData) => ({
         url: '/forgot-password',
         method: 'POST',
@@ -121,7 +73,7 @@ export const authApi = createApi({
       }),
     }),
     
-    resetPassword: builder.mutation<{ message: string }, ResetPasswordRequest>({
+    resetPassword: builder.mutation<{ message: string }, PasswordReset>({
       query: (resetData) => ({
         url: '/reset-password',
         method: 'POST',
@@ -129,22 +81,22 @@ export const authApi = createApi({
       }),
     }),
     
-    changePassword: builder.mutation<{ message: string }, ChangePasswordRequest>({
+    changePassword: builder.mutation<{ message: string }, ChangePassword>({
       query: (passwordData) => ({
         url: '/change-password',
         method: 'POST',
         body: passwordData,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ['Auth', 'Session'],
     }),
     
     // Profile management
-    getProfile: builder.query<LoginResponse['user'], void>({
+    getProfile: builder.query<User, void>({
       query: () => '/profile',
       providesTags: ['Profile'],
     }),
     
-    updateProfile: builder.mutation<LoginResponse['user'], UpdateProfileRequest>({
+    updateProfile: builder.mutation<User, UpdateProfile>({
       query: (updates) => ({
         url: '/profile',
         method: 'PATCH',
@@ -171,9 +123,28 @@ export const authApi = createApi({
     }),
     
     // Session management
-    validateSession: builder.query<{ valid: boolean; user?: LoginResponse['user'] }, void>({
+    validateSession: builder.query<{ valid: boolean; user?: User; expiresAt?: number }, void>({
       query: () => '/validate-session',
-      providesTags: ['Auth'],
+      providesTags: ['Auth', 'Session'],
+    }),
+    
+    getSessions: builder.query<Array<{
+      id: string;
+      deviceInfo: string;
+      ipAddress: string;
+      lastActivity: string;
+      current: boolean;
+    }>, void>({
+      query: () => '/sessions',
+      providesTags: ['Session'],
+    }),
+    
+    revokeSession: builder.mutation<{ message: string }, { sessionId: string }>({
+      query: ({ sessionId }) => ({
+        url: `/sessions/${sessionId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Session'],
     }),
     
     // Two-factor authentication
@@ -202,6 +173,54 @@ export const authApi = createApi({
       }),
       invalidatesTags: ['Profile'],
     }),
+    
+    // Account management
+    deleteAccount: builder.mutation<{ message: string }, { password: string }>({
+      query: ({ password }) => ({
+        url: '/delete-account',
+        method: 'DELETE',
+        body: { password },
+      }),
+      invalidatesTags: ['Auth', 'User', 'Profile', 'Session'],
+    }),
+    
+    // API key management
+    getApiKeys: builder.query<Array<{
+      id: string;
+      name: string;
+      permissions: string[];
+      lastUsed?: string;
+      createdAt: string;
+      expiresAt?: string;
+    }>, void>({
+      query: () => '/api-keys',
+      providesTags: ['Profile'],
+    }),
+    
+    createApiKey: builder.mutation<{ 
+      apiKey: string;
+      id: string;
+      name: string;
+    }, { 
+      name: string; 
+      permissions: string[];
+      expiresAt?: string;
+    }>({
+      query: (keyData) => ({
+        url: '/api-keys',
+        method: 'POST',
+        body: keyData,
+      }),
+      invalidatesTags: ['Profile'],
+    }),
+    
+    revokeApiKey: builder.mutation<{ message: string }, { keyId: string }>({
+      query: ({ keyId }) => ({
+        url: `/api-keys/${keyId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Profile'],
+    }),
   }),
 });
 
@@ -218,7 +237,13 @@ export const {
   useVerifyEmailMutation,
   useResendVerificationEmailMutation,
   useValidateSessionQuery,
+  useGetSessionsQuery,
+  useRevokeSessionMutation,
   useEnableTwoFactorMutation,
   useVerifyTwoFactorMutation,
   useDisableTwoFactorMutation,
+  useDeleteAccountMutation,
+  useGetApiKeysQuery,
+  useCreateApiKeyMutation,
+  useRevokeApiKeyMutation,
 } = authApi;

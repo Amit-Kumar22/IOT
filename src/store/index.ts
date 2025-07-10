@@ -1,5 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
+import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import { combineReducers } from '@reduxjs/toolkit';
 import authSlice from './slices/authSlice';
 import deviceSlice from './slices/deviceSlice';
 import billingSlice from './slices/billingSlice';
@@ -9,27 +12,55 @@ import { deviceApi } from './api/deviceApi';
 import { billingApi } from './api/billingApi';
 import { analyticsApi } from './api/analyticsApi';
 
+// Redux Persist configuration
+const persistConfig = {
+  key: 'iot-platform-root',
+  version: 1,
+  storage,
+  whitelist: ['auth'], // Only persist auth slice
+  blacklist: ['ui'], // Don't persist UI state
+};
+
+// Auth-specific persist config with token refresh handling
+const authPersistConfig = {
+  key: 'auth',
+  storage,
+  whitelist: ['user', 'isAuthenticated', 'refreshToken'], // Persist user data but not access token for security
+  blacklist: ['accessToken', 'loading', 'error'], // Don't persist temporary states
+};
+
+// Combine reducers
+const rootReducer = combineReducers({
+  // State slices with persistence
+  auth: persistReducer(authPersistConfig, authSlice),
+  device: deviceSlice,
+  billing: billingSlice,
+  ui: uiSlice,
+  // API slices (not persisted)
+  [authApi.reducerPath]: authApi.reducer,
+  [deviceApi.reducerPath]: deviceApi.reducer,
+  [billingApi.reducerPath]: billingApi.reducer,
+  [analyticsApi.reducerPath]: analyticsApi.reducer,
+});
+
+// Create persisted reducer
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: {
-    // State slices
-    auth: authSlice,
-    device: deviceSlice,
-    billing: billingSlice,
-    ui: uiSlice,
-    // API slices
-    [authApi.reducerPath]: authApi.reducer,
-    [deviceApi.reducerPath]: deviceApi.reducer,
-    [billingApi.reducerPath]: billingApi.reducer,
-    [analyticsApi.reducerPath]: analyticsApi.reducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [
-          // RTK Query actions that contain non-serializable data
-          'persist/PERSIST',
-          'persist/REHYDRATE',
+          // Redux Persist actions
+          FLUSH,
+          REHYDRATE,
+          PAUSE,
+          PERSIST,
+          PURGE,
+          REGISTER,
         ],
+        ignoredPaths: ['persist'],
       },
     }).concat(
       authApi.middleware,
@@ -42,6 +73,9 @@ export const store = configureStore({
 
 // Setup listeners for refetchOnFocus/refetchOnReconnect behaviors
 setupListeners(store.dispatch);
+
+// Create persistor
+export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

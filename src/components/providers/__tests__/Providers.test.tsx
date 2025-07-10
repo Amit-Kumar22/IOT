@@ -13,9 +13,26 @@ jest.mock('@/store', () => ({
   store: {
     getState: jest.fn(() => ({})),
     dispatch: jest.fn(),
-    subscribe: jest.fn(),
+    subscribe: jest.fn(() => jest.fn()),
     replaceReducer: jest.fn(),
   },
+}));
+
+// Mock Redux Persist
+jest.mock('redux-persist', () => ({
+  persistStore: jest.fn(() => ({
+    purge: jest.fn(),
+    flush: jest.fn(),
+    pause: jest.fn(),
+    persist: jest.fn(),
+    getState: jest.fn(),
+    subscribe: jest.fn(() => jest.fn()),
+  })),
+}));
+
+// Mock PersistGate
+jest.mock('redux-persist/integration/react', () => ({
+  PersistGate: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 describe('Providers Component', () => {

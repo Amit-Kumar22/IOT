@@ -1,0 +1,37 @@
+{
+  "name": "IoT Platform",
+  "short_name": "IoT Platform",
+  "description": "Comprehensive IoT platform for device management, real-time monitoring, and analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "business"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Go to dashboard",
+      "url": "/dashboard",
+      "icons": []
+    },
+    {
+      "name": "Devices",
+      "short_name": "Devices",
+      "description": "Manage devices",
+      "url": "/devices",
+      "icons": []
+    }
+  ]
+}
