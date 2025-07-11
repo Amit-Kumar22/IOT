@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAppSelector } from '@/hooks/redux';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useStableInputHandler, useStableObjectHandler } from '@/hooks/useStableInput';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -57,6 +58,10 @@ export default function CompanySettings() {
     password: '',
     confirmPassword: ''
   });
+
+  // Create stable handlers
+  const createUserHandler = useStableInputHandler(setUserFormData);
+  const createFormHandler = useStableObjectHandler(setFormData);
 
   // Mock company data
   const [companyData, setCompanyData] = useState({
@@ -424,7 +429,8 @@ export default function CompanySettings() {
     }
   };
 
-  const handleInputChange = (section: string, field: string, value: string) => {
+  // Create stable handlers for all form inputs
+  const handleInputChange = useCallback((section: string, field: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
       [section]: {
@@ -432,7 +438,56 @@ export default function CompanySettings() {
         [field]: value
       }
     }));
-  };
+  }, []);
+
+  // Create individual stable handlers for company form
+  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('company', 'companyName', e.target.value);
+  }, [handleInputChange]);
+
+  const handleIndustryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleInputChange('company', 'industry', e.target.value);
+  }, [handleInputChange]);
+
+  const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('company', 'address', e.target.value);
+  }, [handleInputChange]);
+
+  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('company', 'phone', e.target.value);
+  }, [handleInputChange]);
+
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('company', 'email', e.target.value);
+  }, [handleInputChange]);
+
+  // Create stable handlers for password policy
+  const handleMinLengthChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handlePasswordPolicyChange('minLength', parseInt(e.target.value));
+  }, []);
+
+  const handleExpireDaysChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handlePasswordPolicyChange('expireAfterDays', parseInt(e.target.value));
+  }, []);
+
+  const handleSessionTimeoutChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSecuritySettingChange('sessionSettings', 'sessionTimeout', parseInt(e.target.value));
+  }, []);
+
+  const handleBackupFrequencyChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSystemSettingChange('maintenance', 'backupFrequency', e.target.value);
+  }, []);
+
+  const handleLogRetentionChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSystemSettingChange('maintenance', 'logRetentionDays', parseInt(e.target.value.split(' ')[0]));
+  }, []);
+
+  // Create stable handler factory for network settings
+  const createNetworkHandler = useCallback((key: string) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleSystemSettingChange('network', key, e.target.value);
+    };
+  }, []);
 
   const handleSave = async (section: string) => {
     setIsLoading(true);
@@ -480,7 +535,7 @@ export default function CompanySettings() {
             <input
               type="text"
               value={isEditing.company ? (formData.company?.companyName || companyData.profile.companyName) : companyData.profile.companyName}
-              onChange={(e) => handleInputChange('company', 'companyName', e.target.value)}
+              onChange={handleCompanyNameChange}
               disabled={!isEditing.company}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -490,7 +545,7 @@ export default function CompanySettings() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Industry</label>
             <select
               value={isEditing.company ? (formData.company?.industry || companyData.profile.industry) : companyData.profile.industry}
-              onChange={(e) => handleInputChange('company', 'industry', e.target.value)}
+              onChange={handleIndustryChange}
               disabled={!isEditing.company}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             >
@@ -508,7 +563,7 @@ export default function CompanySettings() {
             <input
               type="text"
               value={isEditing.company ? (formData.company?.address || companyData.profile.address) : companyData.profile.address}
-              onChange={(e) => handleInputChange('company', 'address', e.target.value)}
+              onChange={handleAddressChange}
               disabled={!isEditing.company}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -519,7 +574,7 @@ export default function CompanySettings() {
             <input
               type="tel"
               value={isEditing.company ? (formData.company?.phone || companyData.profile.phone) : companyData.profile.phone}
-              onChange={(e) => handleInputChange('company', 'phone', e.target.value)}
+              onChange={handlePhoneChange}
               disabled={!isEditing.company}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -530,7 +585,7 @@ export default function CompanySettings() {
             <input
               type="email"
               value={isEditing.company ? (formData.company?.email || companyData.profile.email) : companyData.profile.email}
-              onChange={(e) => handleInputChange('company', 'email', e.target.value)}
+              onChange={handleEmailChange}
               disabled={!isEditing.company}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -661,7 +716,7 @@ export default function CompanySettings() {
             <input
               type="number"
               value={companyData.security.passwordPolicy.minLength}
-              onChange={(e) => handlePasswordPolicyChange('minLength', parseInt(e.target.value))}
+              onChange={handleMinLengthChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -673,7 +728,7 @@ export default function CompanySettings() {
             <input
               type="number"
               value={companyData.security.passwordPolicy.expireAfterDays}
-              onChange={(e) => handlePasswordPolicyChange('expireAfterDays', parseInt(e.target.value))}
+              onChange={handleExpireDaysChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -722,7 +777,7 @@ export default function CompanySettings() {
             </div>
             <select 
               value={companyData.security.sessionSettings.sessionTimeout}
-              onChange={(e) => handleSecuritySettingChange('sessionSettings', 'sessionTimeout', parseInt(e.target.value))}
+              onChange={handleSessionTimeoutChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
             >
               <option value="15">15 minutes</option>
@@ -773,7 +828,19 @@ export default function CompanySettings() {
     </div>
   );
 
-  const SystemSection = () => (
+  const SystemSection = React.memo(() => {
+    // Create memoized network handlers
+    const networkHandlers = React.useMemo(() => {
+      const handlers: { [key: string]: (e: React.ChangeEvent<HTMLInputElement>) => void } = {};
+      Object.keys(companyData.system.network).forEach(key => {
+        handlers[key] = (e: React.ChangeEvent<HTMLInputElement>) => {
+          handleSystemSettingChange('network', key, e.target.value);
+        };
+      });
+      return handlers;
+    }, []);
+
+    return (
     <div className="space-y-6">
       {/* Network Configuration */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -788,7 +855,7 @@ export default function CompanySettings() {
               <input
                 type="text"
                 value={value}
-                onChange={(e) => handleSystemSettingChange('network', key, e.target.value)}
+                onChange={networkHandlers[key]}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -808,7 +875,7 @@ export default function CompanySettings() {
             </div>
             <select 
               value={companyData.system.maintenance.backupFrequency}
-              onChange={(e) => handleSystemSettingChange('maintenance', 'backupFrequency', e.target.value)}
+              onChange={handleBackupFrequencyChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
             >
               <option>Hourly</option>
@@ -824,7 +891,7 @@ export default function CompanySettings() {
             </div>
             <select 
               value={`${companyData.system.maintenance.logRetentionDays} days`}
-              onChange={(e) => handleSystemSettingChange('maintenance', 'logRetentionDays', parseInt(e.target.value.split(' ')[0]))}
+              onChange={handleLogRetentionChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
             >
               <option>30 days</option>
@@ -893,7 +960,8 @@ export default function CompanySettings() {
         </div>
       </div>
     </div>
-  );
+    );
+  });
 
   const renderContent = () => {
     switch (activeSection) {
@@ -965,7 +1033,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={userFormData.name}
-                  onChange={(e) => setUserFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={createUserHandler('name')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Enter full name"
                 />
@@ -978,7 +1046,7 @@ export default function CompanySettings() {
                 <input
                   type="email"
                   value={userFormData.email}
-                  onChange={(e) => setUserFormData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={createUserHandler('email')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Enter email address"
                 />
@@ -990,7 +1058,7 @@ export default function CompanySettings() {
                 </label>
                 <select
                   value={userFormData.role}
-                  onChange={(e) => setUserFormData(prev => ({ ...prev, role: e.target.value }))}
+                  onChange={createUserHandler('role')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 >
                   <option value="Administrator">Administrator</option>
@@ -1008,7 +1076,7 @@ export default function CompanySettings() {
                 <input
                   type="text"
                   value={userFormData.department}
-                  onChange={(e) => setUserFormData(prev => ({ ...prev, department: e.target.value }))}
+                  onChange={createUserHandler('department')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="Enter department"
                 />
@@ -1023,7 +1091,7 @@ export default function CompanySettings() {
                     <input
                       type="password"
                       value={userFormData.password}
-                      onChange={(e) => setUserFormData(prev => ({ ...prev, password: e.target.value }))}
+                      onChange={createUserHandler('password')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       placeholder="Enter password"
                     />
@@ -1036,7 +1104,7 @@ export default function CompanySettings() {
                     <input
                       type="password"
                       value={userFormData.confirmPassword}
-                      onChange={(e) => setUserFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      onChange={createUserHandler('confirmPassword')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       placeholder="Confirm password"
                     />

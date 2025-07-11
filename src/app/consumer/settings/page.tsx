@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAppSelector } from '@/hooks/redux';
+import { useStableInputHandler } from '@/hooks/useStableInput';
 import {
   UserIcon,
   BellIcon,
@@ -47,6 +48,9 @@ export default function ConsumerSettings() {
     dateFormat: 'MM/DD/YYYY'
   });
 
+  // Create stable handlers
+  const createPreferencesHandler = useStableInputHandler(setPreferences);
+
   // Notifications state
   const [notifications, setNotifications] = useState({
     email: {
@@ -82,6 +86,9 @@ export default function ConsumerSettings() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Create stable handler for password form
+  const createPasswordHandler = useStableInputHandler(setPasswordData);
 
   // Mock user data
   const userData = {
@@ -135,13 +142,34 @@ export default function ConsumerSettings() {
     { id: 'support', name: 'Help & Support', icon: QuestionMarkCircleIcon }
   ];
 
-  // Handle form input changes
-  const handleInputChange = (field: string, value: string) => {
+  // Handle form input changes with stable references
+  const handleInputChange = React.useCallback((field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
+
+  // Create stable handlers for each input
+  const handleNameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('name', e.target.value);
+  }, [handleInputChange]);
+
+  const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('email', e.target.value);
+  }, [handleInputChange]);
+
+  const handlePhoneChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('phone', e.target.value);
+  }, [handleInputChange]);
+
+  const handleTimezoneChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleInputChange('timezone', e.target.value);
+  }, [handleInputChange]);
+
+  const handleAddressChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('address', e.target.value);
+  }, [handleInputChange]);
 
   // Handle form save
   const handleSave = () => {
@@ -192,7 +220,7 @@ export default function ConsumerSettings() {
             <input
               type="text"
               value={isEditing ? formData.name : userData.profile.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={handleNameChange}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -203,7 +231,7 @@ export default function ConsumerSettings() {
             <input
               type="email"
               value={isEditing ? formData.email : userData.profile.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
+              onChange={handleEmailChange}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -214,7 +242,7 @@ export default function ConsumerSettings() {
             <input
               type="tel"
               value={isEditing ? formData.phone : userData.profile.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
+              onChange={handlePhoneChange}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -224,7 +252,7 @@ export default function ConsumerSettings() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Zone</label>
             <select
               value={isEditing ? formData.timezone : userData.profile.timezone}
-              onChange={(e) => handleInputChange('timezone', e.target.value)}
+              onChange={handleTimezoneChange}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             >
@@ -240,7 +268,7 @@ export default function ConsumerSettings() {
             <input
               type="text"
               value={isEditing ? formData.address : userData.profile.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
+              onChange={handleAddressChange}
               disabled={!isEditing}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
             />
@@ -277,7 +305,7 @@ export default function ConsumerSettings() {
             </div>
             <select 
               value={preferences.temperatureUnit}
-              onChange={(e) => setPreferences(prev => ({ ...prev, temperatureUnit: e.target.value }))}
+              onChange={createPreferencesHandler('temperatureUnit')}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
             >
               <option>Fahrenheit</option>
@@ -292,7 +320,7 @@ export default function ConsumerSettings() {
             </div>
             <select 
               value={preferences.dateFormat}
-              onChange={(e) => setPreferences(prev => ({ ...prev, dateFormat: e.target.value }))}
+              onChange={createPreferencesHandler('dateFormat')}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
             >
               <option>MM/DD/YYYY</option>
@@ -388,7 +416,7 @@ export default function ConsumerSettings() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Current password"
                   value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  onChange={createPasswordHandler('currentPassword')}
                   className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
                 <button
@@ -403,14 +431,14 @@ export default function ConsumerSettings() {
                 type="password"
                 placeholder="New password"
                 value={passwordData.newPassword}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                onChange={createPasswordHandler('newPassword')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
               <input
                 type="password"
                 placeholder="Confirm new password"
                 value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                onChange={createPasswordHandler('confirmPassword')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
               <button 

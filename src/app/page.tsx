@@ -11,14 +11,14 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 
-// Navigation items for demo
+// Navigation items for demo - redirect to login for protected features
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, current: true },
-  { name: 'Devices', href: '/devices', icon: CpuChipIcon, current: false },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
-  { name: 'Users', href: '/users', icon: UserGroupIcon, current: false },
-  { name: 'Settings', href: '/settings', icon: CogIcon, current: false },
-  { name: 'Security', href: '/security', icon: ShieldCheckIcon, current: false },
+  { name: 'Devices', href: '/login', icon: CpuChipIcon, current: false },
+  { name: 'Analytics', href: '/login', icon: ChartBarIcon, current: false },
+  { name: 'Users', href: '/login', icon: UserGroupIcon, current: false },
+  { name: 'Settings', href: '/login', icon: CogIcon, current: false },
+  { name: 'Security', href: '/login', icon: ShieldCheckIcon, current: false },
 ];
 
 export default function Home() {
@@ -38,6 +38,11 @@ export default function Home() {
               <p className="mt-2 text-gray-600 dark:text-gray-400">
                 Manage your IoT devices, monitor analytics, and control your infrastructure from one unified platform.
               </p>
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>👆 Try the sidebar:</strong> Click on any menu item (Devices, Analytics, etc.) to be redirected to the login page where you can access the full platform features.
+                </p>
+              </div>
             </div>
 
             {/* Authentication Demo Section */}

@@ -5,6 +5,7 @@ import { useAppSelector } from '@/hooks/redux';
 import { useDevices } from '@/hooks/useApi';
 import { DeviceList } from '@/components/device';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useStableInputHandler } from '@/hooks/useStableInput';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -83,6 +84,9 @@ function ConsumerDevicesPageContent() {
     description: '',
     settings: {}
   });
+
+  // Create stable handlers
+  const createDeviceHandler = useStableInputHandler(setDeviceForm);
 
   // Automation form state
   const [automationForm, setAutomationForm] = useState({
@@ -804,7 +808,7 @@ function ConsumerDevicesPageContent() {
             <input
               type="text"
               value={deviceForm.name}
-              onChange={(e) => setDeviceForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={createDeviceHandler('name')}
               placeholder="Living Room Light"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -816,7 +820,7 @@ function ConsumerDevicesPageContent() {
             </label>
             <select
               value={deviceForm.type}
-              onChange={(e) => setDeviceForm(prev => ({ ...prev, type: e.target.value }))}
+              onChange={createDeviceHandler('type')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="light">Smart Light</option>
@@ -835,7 +839,7 @@ function ConsumerDevicesPageContent() {
             </label>
             <select
               value={deviceForm.room}
-              onChange={(e) => setDeviceForm(prev => ({ ...prev, room: e.target.value }))}
+              onChange={createDeviceHandler('room')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Select Room</option>
@@ -855,7 +859,7 @@ function ConsumerDevicesPageContent() {
             </label>
             <textarea
               value={deviceForm.description}
-              onChange={(e) => setDeviceForm(prev => ({ ...prev, description: e.target.value }))}
+              onChange={createDeviceHandler('description')}
               placeholder="Device description or notes..."
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"

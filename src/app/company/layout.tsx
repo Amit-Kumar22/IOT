@@ -9,7 +9,8 @@ import {
   CogIcon,
   CommandLineIcon,
   ClockIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 interface CompanyLayoutProps {
@@ -39,6 +40,12 @@ const companyNavigation = [
     name: 'Automation',
     href: '/company/automation',
     icon: ClockIcon,
+    current: false,
+  },
+  {
+    name: 'Users',
+    href: '/company/users',
+    icon: UserGroupIcon,
     current: false,
   },
   {

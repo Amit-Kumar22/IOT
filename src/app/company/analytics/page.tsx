@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAppSelector } from '@/hooks/redux';
+import { useToast } from '@/components/providers/ToastProvider';
+import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ChartBarIcon,
   CalendarIcon,
@@ -17,7 +20,12 @@ import {
   ShareIcon,
   EyeIcon,
   ChevronDownIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentArrowDownIcon,
+  DocumentTextIcon,
+  XMarkIcon,
+  Cog6ToothIcon,
+  ChartPieIcon
 } from '@heroicons/react/24/outline';
 
 /**
@@ -25,6 +33,7 @@ import {
  * Advanced analytics dashboard for industrial device monitoring and KPI tracking
  */
 export default function CompanyAnalytics() {
+  const { showToast } = useToast();
   const [timeRange, setTimeRange] = useState('24h');
   const [selectedMetrics, setSelectedMetrics] = useState(['uptime', 'performance', 'energy']);
   const [viewType, setViewType] = useState('overview');
@@ -32,6 +41,64 @@ export default function CompanyAnalytics() {
   const [isExporting, setIsExporting] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  
+  // Modal states
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isKpiModalOpen, setIsKpiModalOpen] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isSiteDetailModalOpen, setIsSiteDetailModalOpen] = useState(false);
+  const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Analytics data state
+  const [analyticsData, setAnalyticsData] = useState({
+    kpis: [
+      { id: 'efficiency', name: 'Operational Efficiency', value: 87.5, target: 90, trend: 'up' },
+      { id: 'downtime', name: 'System Downtime', value: 2.3, target: 5, trend: 'down' },
+      { id: 'throughput', name: 'Production Throughput', value: 1250, target: 1200, trend: 'up' },
+      { id: 'quality', name: 'Quality Score', value: 96.2, target: 95, trend: 'up' },
+    ],
+    sites: [
+      { id: 'site1', name: 'Manufacturing Plant A', devices: 45, alerts: 2, efficiency: 89.2, status: 'optimal', uptime: 98.5 },
+      { id: 'site2', name: 'Warehouse B', devices: 32, alerts: 1, efficiency: 91.8, status: 'good', uptime: 96.2 },
+      { id: 'site3', name: 'Distribution Center', devices: 28, alerts: 0, efficiency: 93.1, status: 'optimal', uptime: 99.1 },
+    ],
+    overview: {
+      totalDevices: 105,
+      activeDevices: 98,
+      totalAlerts: 3,
+      avgEfficiency: 91.4,
+      uptime: 97.9,
+      efficiency: 91.4,
+      alerts: 3,
+    },
+    alerts: [
+      { id: 1, type: 'warning', message: 'High CPU usage on Device #127', site: 'Manufacturing Plant A', timestamp: '2024-01-15T10:30:00Z' },
+      { id: 2, type: 'error', message: 'Connection lost to Sensor #45', site: 'Warehouse B', timestamp: '2024-01-15T09:15:00Z' },
+      { id: 3, type: 'info', message: 'Scheduled maintenance reminder', site: 'Distribution Center', timestamp: '2024-01-15T08:00:00Z' },
+    ],
+    trends: {
+      hourly: [
+        { time: '00:00', uptime: 98.5, performance: 87.2, energy: 92.1 },
+        { time: '01:00', uptime: 97.8, performance: 89.5, energy: 91.8 },
+        { time: '02:00', uptime: 99.2, performance: 91.3, energy: 93.5 },
+        { time: '03:00', uptime: 98.9, performance: 90.8, energy: 92.9 },
+        { time: '04:00', uptime: 97.5, performance: 88.4, energy: 91.2 },
+        { time: '05:00', uptime: 98.8, performance: 92.1, energy: 94.3 },
+      ],
+      daily: [
+        { time: 'Mon', uptime: 98.2, performance: 89.5, energy: 92.8 },
+        { time: 'Tue', uptime: 97.9, performance: 91.2, energy: 93.1 },
+        { time: 'Wed', uptime: 98.5, performance: 90.8, energy: 91.9 },
+        { time: 'Thu', uptime: 97.8, performance: 89.3, energy: 92.5 },
+        { time: 'Fri', uptime: 99.1, performance: 92.7, energy: 94.2 },
+        { time: 'Sat', uptime: 98.3, performance: 88.9, energy: 91.4 },
+        { time: 'Sun', uptime: 97.6, performance: 90.1, energy: 93.0 },
+      ],
+    },
+  });
 
   // Handle data export functionality
   const handleExportData = async (format: 'csv' | 'pdf' | 'excel') => {
@@ -99,11 +166,18 @@ export default function CompanyAnalytics() {
   // Handle manual refresh
   const handleManualRefresh = () => {
     console.log('Refreshing analytics data...');
-    alert('Analytics data refreshed successfully!');
+    showToast({ message: 'Analytics data refreshed successfully!', type: 'success' });
   };
 
-  // Mock industrial analytics data
-  const analyticsData = {
+  // Mock industrial analytics data - extend the state data
+  const extendedAnalyticsData = {
+    ...analyticsData,
+    deviceCategories: [
+      { id: 'sensors', name: 'Sensors', count: 89, status: 'operational' },
+      { id: 'controllers', name: 'Controllers', count: 45, status: 'operational' },
+      { id: 'actuators', name: 'Actuators', count: 78, status: 'operational' },
+      { id: 'gateways', name: 'Gateways', count: 12, status: 'operational' }
+    ],
     overview: {
       totalDevices: 247,
       activeDevices: 231,
@@ -143,6 +217,41 @@ export default function CompanyAnalytics() {
         target: 2.0,
         trend: { value: 0.3, positive: false },
         category: 'maintenance',
+        color: 'bg-yellow-500'
+      },
+      {
+        id: 'energy_efficiency',
+        name: 'Energy Efficiency',
+        value: 92.4,
+        unit: '%',
+        target: 85,
+        trend: { value: 3.7, positive: true },
+        category: 'energy',
+        color: 'bg-purple-500'
+      }
+    ],
+    sites: [
+      {
+        id: 'manufacturing-floor-a',
+        name: 'Manufacturing Floor A',
+        devices: 89,
+        uptime: 96.2,
+        efficiency: 91.3,
+        alerts: 3,
+        status: 'optimal'
+      },
+      {
+        id: 'warehouse-b',
+        name: 'Warehouse B',
+        devices: 67,
+        uptime: 93.8,
+        efficiency: 85.7,
+        alerts: 5,
+        status: 'good'
+      },
+      {
+        id: 'assembly-line-c',
+        name: 'Assembly Line C',
         color: 'bg-yellow-500'
       },
       {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useStableForm } from '@/hooks/useStableForm';
 import { useToast } from '@/components/providers/ToastProvider';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -19,46 +20,51 @@ import {
   CalendarIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BuildingOfficeIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 
-interface User {
+interface CompanyUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'company' | 'consumer';
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  role: 'admin' | 'manager' | 'operator' | 'viewer';
+  department: string;
+  status: 'active' | 'inactive' | 'pending';
   phone?: string;
-  company?: string;
-  department?: string;
+  position: string;
+  permissions: string[];
   createdAt: string;
   lastLogin?: string;
   devices?: number;
-  permissions?: string[];
+  supervisor?: string;
 }
 
 interface UserFormData {
   name: string;
   email: string;
-  role: 'admin' | 'company' | 'consumer';
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
-  phone: string;
-  company: string;
+  role: 'admin' | 'manager' | 'operator' | 'viewer';
   department: string;
+  status: 'active' | 'inactive' | 'pending';
+  phone: string;
+  position: string;
   permissions: string[];
+  supervisor: string;
 }
 
 /**
- * Admin Users Management Page
- * Complete CRUD operations for user management with advanced features
+ * Company Users Management Page
+ * Complete CRUD operations for company user management with dummy data
  */
-export default function AdminUsersPage() {
+export default function CompanyUsersPage() {
   const { showToast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -69,91 +75,121 @@ export default function AdminUsersPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
-  
-  // Form states
-  const [formData, setFormData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    role: 'consumer',
-    status: 'active',
-    phone: '',
-    company: '',
-    department: '',
-    permissions: []
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Selected user for operations
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<CompanyUser | null>(null);
 
-  // Mock data - In real app, this would come from API
-  const mockUsers: User[] = [
+  // Initial form data
+  const initialFormData: UserFormData = {
+    name: '',
+    email: '',
+    role: 'viewer',
+    department: '',
+    status: 'active',
+    phone: '',
+    position: '',
+    permissions: [],
+    supervisor: ''
+  };
+
+  // Use stable form hook
+  const {
+    formData,
+    createHandler,
+    resetForm,
+    errors: formErrors,
+    setFieldError,
+    updateFormData
+  } = useStableForm(initialFormData);
+
+  // Mock data for company users
+  const mockUsers: CompanyUser[] = [
     {
       id: '1',
-      name: 'John Smith',
-      email: 'john.smith@example.com',
+      name: 'Alice Johnson',
+      email: 'alice.johnson@company.com',
       role: 'admin',
+      department: 'IT',
       status: 'active',
       phone: '+1 (555) 123-4567',
-      company: 'TechCorp',
-      department: 'IT',
+      position: 'IT Director',
+      permissions: ['user_management', 'system_config', 'device_control', 'analytics', 'billing'],
       createdAt: '2024-01-15T10:00:00Z',
       lastLogin: '2024-12-10T14:30:00Z',
-      devices: 5,
-      permissions: ['user_management', 'system_config', 'analytics']
+      devices: 15
     },
     {
       id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      role: 'company',
+      name: 'Bob Smith',
+      email: 'bob.smith@company.com',
+      role: 'manager',
+      department: 'Operations',
       status: 'active',
       phone: '+1 (555) 987-6543',
-      company: 'Manufacturing Inc',
-      department: 'Operations',
+      position: 'Operations Manager',
+      permissions: ['device_control', 'analytics', 'team_management'],
       createdAt: '2024-02-20T09:15:00Z',
       lastLogin: '2024-12-10T13:45:00Z',
-      devices: 25,
-      permissions: ['device_management', 'analytics']
+      devices: 8,
+      supervisor: 'Alice Johnson'
     },
     {
       id: '3',
-      name: 'Mike Wilson',
-      email: 'mike.wilson@email.com',
-      role: 'consumer',
+      name: 'Carol Davis',
+      email: 'carol.davis@company.com',
+      role: 'operator',
+      department: 'Production',
       status: 'active',
       phone: '+1 (555) 456-7890',
+      position: 'Production Operator',
+      permissions: ['device_control', 'basic_analytics'],
       createdAt: '2024-03-10T16:20:00Z',
       lastLogin: '2024-12-09T20:15:00Z',
-      devices: 8,
-      permissions: ['device_control']
+      devices: 5,
+      supervisor: 'Bob Smith'
     },
     {
       id: '4',
-      name: 'Lisa Brown',
-      email: 'lisa.brown@test.com',
-      role: 'consumer',
+      name: 'David Wilson',
+      email: 'david.wilson@company.com',
+      role: 'viewer',
+      department: 'Quality Control',
       status: 'inactive',
       phone: '+1 (555) 234-5678',
+      position: 'QC Inspector',
+      permissions: ['view_only'],
       createdAt: '2024-04-05T11:30:00Z',
       lastLogin: '2024-11-15T18:00:00Z',
-      devices: 3,
-      permissions: ['device_control']
+      devices: 2,
+      supervisor: 'Carol Davis'
     },
     {
       id: '5',
-      name: 'David Lee',
-      email: 'david.lee@pending.com',
-      role: 'company',
+      name: 'Eva Martinez',
+      email: 'eva.martinez@company.com',
+      role: 'manager',
+      department: 'Engineering',
       status: 'pending',
       phone: '+1 (555) 345-6789',
-      company: 'StartupCorp',
-      department: 'Engineering',
+      position: 'Engineering Manager',
+      permissions: ['device_control', 'analytics', 'system_config'],
       createdAt: '2024-12-08T08:45:00Z',
       devices: 0,
-      permissions: []
+      supervisor: 'Alice Johnson'
     }
+  ];
+
+  const departments = ['IT', 'Operations', 'Production', 'Quality Control', 'Engineering', 'Maintenance', 'Security'];
+  const availablePermissions = [
+    'user_management',
+    'system_config', 
+    'device_control',
+    'analytics',
+    'billing',
+    'team_management',
+    'basic_analytics',
+    'view_only'
   ];
 
   useEffect(() => {
@@ -178,16 +214,39 @@ export default function AdminUsersPage() {
     loadUsers();
   }, [showToast]);
 
+  // Create stable search and filter handlers
+  const handleSearchChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
+
+  const handleStatusFilterChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRoleFilterChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleDepartmentFilterChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDepartmentFilter(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
   // Filter and search users
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.company?.toLowerCase().includes(searchTerm.toLowerCase());
+                         user.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.position.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesDepartment = departmentFilter === 'all' || user.department === departmentFilter;
     
-    return matchesSearch && matchesStatus && matchesRole;
+    return matchesSearch && matchesStatus && matchesRole && matchesDepartment;
   });
 
   // Pagination
@@ -212,45 +271,24 @@ export default function AdminUsersPage() {
     if (!data.role) {
       errors.role = 'Role is required';
     }
+
+    if (!data.department.trim()) {
+      errors.department = 'Department is required';
+    }
+
+    if (!data.position.trim()) {
+      errors.position = 'Position is required';
+    }
     
     return errors;
-  };
-
-  // Form handlers - Fixed to prevent input focus loss
-  const handleInputChange = React.useCallback((field: keyof UserFormData, value: string | string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    // Clear error when user starts typing - using functional update to avoid dependency
-    setFormErrors(prev => {
-      if (prev[field]) {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      }
-      return prev;
-    });
-  }, []); // Empty dependency array for stable reference
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      role: 'consumer',
-      status: 'active',
-      phone: '',
-      company: '',
-      department: '',
-      permissions: []
-    });
-    setFormErrors({});
   };
 
   const handleAddUser = async () => {
     const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+      Object.entries(errors).forEach(([field, error]) => {
+        setFieldError(field as any, error);
+      });
       return;
     }
 
@@ -259,7 +297,7 @@ export default function AdminUsersPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const newUser: User = {
+      const newUser: CompanyUser = {
         id: Date.now().toString(),
         ...formData,
         createdAt: new Date().toISOString(),
@@ -272,7 +310,7 @@ export default function AdminUsersPage() {
       
       showToast({
         title: 'Success',
-        message: 'User created successfully',
+        message: `User ${formData.name} created successfully`,
         type: 'success'
       });
     } catch (error) {
@@ -291,7 +329,9 @@ export default function AdminUsersPage() {
     
     const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+      Object.entries(errors).forEach(([field, error]) => {
+        setFieldError(field as any, error);
+      });
       return;
     }
 
@@ -312,7 +352,7 @@ export default function AdminUsersPage() {
       
       showToast({
         title: 'Success',
-        message: 'User updated successfully',
+        message: `User ${formData.name} updated successfully`,
         type: 'success'
       });
     } catch (error) {
@@ -340,7 +380,7 @@ export default function AdminUsersPage() {
       
       showToast({
         title: 'Success',
-        message: 'User deleted successfully',
+        message: `User ${selectedUser.name} deleted successfully`,
         type: 'success'
       });
     } catch (error) {
@@ -380,7 +420,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleToggleStatus = async (user: User) => {
+  const handleToggleStatus = async (user: CompanyUser) => {
     const newStatus = user.status === 'active' ? 'inactive' : 'active';
     
     try {
@@ -407,27 +447,28 @@ export default function AdminUsersPage() {
     }
   };
 
-  const openEditModal = (user: User) => {
+  const openEditModal = (user: CompanyUser) => {
     setSelectedUser(user);
-    setFormData({
+    updateFormData({
       name: user.name,
       email: user.email,
       role: user.role,
+      department: user.department,
       status: user.status,
       phone: user.phone || '',
-      company: user.company || '',
-      department: user.department || '',
-      permissions: user.permissions || []
+      position: user.position,
+      permissions: user.permissions || [],
+      supervisor: user.supervisor || ''
     });
     setIsEditModalOpen(true);
   };
 
-  const openViewModal = (user: User) => {
+  const openViewModal = (user: CompanyUser) => {
     setSelectedUser(user);
     setIsViewModalOpen(true);
   };
 
-  const openDeleteDialog = (user: User) => {
+  const openDeleteDialog = (user: CompanyUser) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
@@ -441,8 +482,6 @@ export default function AdminUsersPage() {
         return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400`;
       case 'pending':
         return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400`;
-      case 'suspended':
-        return `${baseClasses} bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400`;
     }
@@ -453,60 +492,27 @@ export default function AdminUsersPage() {
     switch (role) {
       case 'admin':
         return `${baseClasses} bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400`;
-      case 'company':
+      case 'manager':
         return `${baseClasses} bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400`;
-      case 'consumer':
+      case 'operator':
         return `${baseClasses} bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400`;
+      case 'viewer':
+        return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400`;
     }
   };
 
-  const UserForm = React.memo(() => {
-    // Create stable input handlers to prevent focus loss
-    const handleNameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      handleInputChange('name', e.target.value);
-    }, [handleInputChange]);
+  const handlePermissionChange = React.useCallback((permission: string, checked: boolean) => {
+    const currentPermissions = formData.permissions || [];
+    const updatedPermissions = checked
+      ? [...currentPermissions, permission]
+      : currentPermissions.filter(p => p !== permission);
+    
+    updateFormData({ permissions: updatedPermissions });
+  }, [formData.permissions, updateFormData]);
 
-    const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      handleInputChange('email', e.target.value);
-    }, [handleInputChange]);
-
-    const handleRoleChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-      handleInputChange('role', e.target.value);
-    }, [handleInputChange]);
-
-    const handleStatusChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-      handleInputChange('status', e.target.value);
-    }, [handleInputChange]);
-
-    const handlePhoneChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      handleInputChange('phone', e.target.value);
-    }, [handleInputChange]);
-
-    const handleCompanyChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      handleInputChange('company', e.target.value);
-    }, [handleInputChange]);
-
-    const handleDepartmentChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      handleInputChange('department', e.target.value);
-    }, [handleInputChange]);
-
-    const handleFormCancel = React.useCallback(() => {
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      resetForm();
-    }, []);
-
-    const handleFormSubmit = React.useCallback(() => {
-      if (selectedUser) {
-        handleEditUser();
-      } else {
-        handleAddUser();
-      }
-    }, [selectedUser, handleEditUser, handleAddUser]);
-
-    return (
+  const UserForm = React.memo(() => (
     <form className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -516,7 +522,7 @@ export default function AdminUsersPage() {
           <input
             type="text"
             value={formData.name}
-            onChange={handleNameChange}
+            onChange={createHandler('name')}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
               formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
@@ -535,7 +541,7 @@ export default function AdminUsersPage() {
           <input
             type="email"
             value={formData.email}
-            onChange={handleEmailChange}
+            onChange={createHandler('email')}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
               formErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
@@ -552,29 +558,51 @@ export default function AdminUsersPage() {
           </label>
           <select
             value={formData.role}
-            onChange={handleRoleChange}
+            onChange={createHandler('role')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           >
-            <option value="consumer">Consumer</option>
-            <option value="company">Company</option>
+            <option value="viewer">Viewer</option>
+            <option value="operator">Operator</option>
+            <option value="manager">Manager</option>
             <option value="admin">Admin</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Status
+            Department *
           </label>
           <select
-            value={formData.status}
-            onChange={handleStatusChange}
+            value={formData.department}
+            onChange={createHandler('department')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-            <option value="suspended">Suspended</option>
+            <option value="">Select Department</option>
+            {departments.map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
           </select>
+          {formErrors.department && (
+            <p className="mt-1 text-sm text-red-600">{formErrors.department}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Position *
+          </label>
+          <input
+            type="text"
+            value={formData.position}
+            onChange={createHandler('position')}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+              formErrors.position ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+            }`}
+            placeholder="Enter job position"
+          />
+          {formErrors.position && (
+            <p className="mt-1 text-sm text-red-600">{formErrors.position}</p>
+          )}
         </div>
 
         <div>
@@ -584,7 +612,7 @@ export default function AdminUsersPage() {
           <input
             type="tel"
             value={formData.phone}
-            onChange={handlePhoneChange}
+            onChange={createHandler('phone')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             placeholder="Enter phone number"
           />
@@ -592,42 +620,70 @@ export default function AdminUsersPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Company
+            Status
           </label>
-          <input
-            type="text"
-            value={formData.company}
-            onChange={handleCompanyChange}
+          <select
+            value={formData.status}
+            onChange={createHandler('status')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="Enter company name"
-          />
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="pending">Pending</option>
+          </select>
         </div>
 
-        <div className="md:col-span-2">
+        <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Department
+            Supervisor
           </label>
           <input
             type="text"
-            value={formData.department}
-            onChange={handleDepartmentChange}
+            value={formData.supervisor}
+            onChange={createHandler('supervisor')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="Enter department"
+            placeholder="Enter supervisor name"
           />
         </div>
       </div>
 
-      <div className="flex justify-end space-x-3">
+      {/* Permissions */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Permissions
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {availablePermissions.map(permission => (
+            <label key={permission} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.permissions?.includes(permission) || false}
+                onChange={(e) => handlePermissionChange(permission, e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3 pt-4">
         <button
           type="button"
-          onClick={handleFormCancel}
+          onClick={() => {
+            setIsAddModalOpen(false);
+            setIsEditModalOpen(false);
+            resetForm();
+          }}
           className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           Cancel
         </button>
         <button
           type="button"
-          onClick={handleFormSubmit}
+          onClick={selectedUser ? handleEditUser : handleAddUser}
           disabled={isSubmitting}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
@@ -642,8 +698,7 @@ export default function AdminUsersPage() {
         </button>
       </div>
     </form>
-    );
-  });
+  ));
 
   if (loading) {
     return (
@@ -660,10 +715,10 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center">
-              <UserGroupIcon className="h-8 w-8 mr-3" />
-              User Management
+              <BuildingOfficeIcon className="h-8 w-8 mr-3" />
+              Company User Management
             </h1>
-            <p className="text-blue-100 mt-1">Manage system users and their permissions</p>
+            <p className="text-blue-100 mt-1">Manage company employees and their access permissions</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -722,12 +777,12 @@ export default function AdminUsersPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <XCircleIcon className="h-8 w-8 text-red-600" />
+              <BuildingOfficeIcon className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-5">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Inactive Users</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Departments</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                {users.filter(u => u.status === 'inactive').length}
+                {new Set(users.map(u => u.department)).size}
               </p>
             </div>
           </div>
@@ -736,7 +791,7 @@ export default function AdminUsersPage() {
 
       {/* Filters and Search */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="flex flex-1 max-w-md">
             <div className="relative flex-1">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -744,7 +799,7 @@ export default function AdminUsersPage() {
                 type="text"
                 placeholder="Search users..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -753,25 +808,36 @@ export default function AdminUsersPage() {
           <div className="flex gap-3">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={handleStatusFilterChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
             </select>
             
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={handleRoleFilterChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="all">All Roles</option>
               <option value="admin">Admin</option>
-              <option value="company">Company</option>
-              <option value="consumer">Consumer</option>
+              <option value="manager">Manager</option>
+              <option value="operator">Operator</option>
+              <option value="viewer">Viewer</option>
+            </select>
+
+            <select
+              value={departmentFilter}
+              onChange={handleDepartmentFilterChange}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="all">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -829,10 +895,10 @@ export default function AdminUsersPage() {
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
+                  Department
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Company
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Devices
@@ -876,6 +942,9 @@ export default function AdminUsersPage() {
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {user.email}
                         </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          {user.position}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -884,6 +953,9 @@ export default function AdminUsersPage() {
                       {user.role}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {user.department}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => handleToggleStatus(user)}
@@ -891,9 +963,6 @@ export default function AdminUsersPage() {
                     >
                       {user.status}
                     </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {user.company || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {user.devices || 0}
@@ -906,18 +975,21 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => openViewModal(user)}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        title="View Details"
                       >
                         <EyeIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => openEditModal(user)}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        title="Edit User"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => openDeleteDialog(user)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        title="Delete User"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -933,64 +1005,49 @@ export default function AdminUsersPage() {
         {totalPages > 1 && (
           <div className="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Next
-                </button>
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing{' '}
+                  <span className="font-medium">{startIndex + 1}</span> to{' '}
+                  <span className="font-medium">
+                    {Math.min(startIndex + pageSize, filteredUsers.length)}
+                  </span>{' '}
+                  of <span className="font-medium">{filteredUsers.length}</span> results
+                </p>
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Showing{' '}
-                    <span className="font-medium">{startIndex + 1}</span> to{' '}
-                    <span className="font-medium">
-                      {Math.min(startIndex + pageSize, filteredUsers.length)}
-                    </span>{' '}
-                    of <span className="font-medium">{filteredUsers.length}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const page = i + Math.max(1, currentPage - 2);
+                    return page <= totalPages ? (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                           page === currentPage
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900/50 dark:border-blue-400'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300'
                         }`}
                       >
                         {page}
                       </button>
-                    ))}
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </nav>
-                </div>
+                    ) : null;
+                  })}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                  >
+                    Next
+                  </button>
+                </nav>
               </div>
             </div>
           </div>
@@ -1004,7 +1061,7 @@ export default function AdminUsersPage() {
           setIsAddModalOpen(false);
           resetForm();
         }}
-        title="Add New User"
+        title="Add New Company User"
         size="lg"
       >
         <UserForm />
@@ -1018,7 +1075,7 @@ export default function AdminUsersPage() {
           setSelectedUser(null);
           resetForm();
         }}
-        title="Edit User"
+        title="Edit Company User"
         size="lg"
       >
         <UserForm />
@@ -1058,16 +1115,20 @@ export default function AdminUsersPage() {
                 </span>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.department}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Position</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.position}</p>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.phone || '-'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company</label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.company || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.department || '-'}</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Supervisor</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedUser.supervisor || '-'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Devices</label>
@@ -1096,7 +1157,7 @@ export default function AdminUsersPage() {
                       key={permission}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                     >
-                      {permission}
+                      {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </span>
                   ))}
                 </div>

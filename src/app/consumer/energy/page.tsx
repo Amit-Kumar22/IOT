@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAppSelector } from '@/hooks/redux';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useStableInputHandler } from '@/hooks/useStableInput';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -66,6 +67,10 @@ function ConsumerEnergyContent() {
     period: 'daily',
     enabled: true
   });
+
+  // Create stable handlers
+  const createGoalHandler = useStableInputHandler(setGoalForm);
+  const createAlertHandler = useStableInputHandler(setAlertForm);
   
   const [scheduleForm, setScheduleForm] = useState({
     name: '',
@@ -1029,7 +1034,7 @@ function ConsumerEnergyContent() {
             </label>
             <select
               value={goalForm.type}
-              onChange={(e) => setGoalForm(prev => ({ ...prev, type: e.target.value }))}
+              onChange={createGoalHandler('type')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="usage">Energy Usage (kWh)</option>
@@ -1044,7 +1049,7 @@ function ConsumerEnergyContent() {
             <input
               type="number"
               value={goalForm.target}
-              onChange={(e) => setGoalForm(prev => ({ ...prev, target: Number(e.target.value) }))}
+              onChange={createGoalHandler('target')}
               placeholder={goalForm.type === 'usage' ? 'kWh' : '$'}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -1056,7 +1061,7 @@ function ConsumerEnergyContent() {
             </label>
             <select
               value={goalForm.period}
-              onChange={(e) => setGoalForm(prev => ({ ...prev, period: e.target.value }))}
+              onChange={createGoalHandler('period')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="daily">Daily</option>
@@ -1104,7 +1109,7 @@ function ConsumerEnergyContent() {
             </label>
             <select
               value={alertForm.type}
-              onChange={(e) => setAlertForm(prev => ({ ...prev, type: e.target.value }))}
+              onChange={createAlertHandler('type')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="usage">Usage Alert (kWh)</option>
@@ -1120,7 +1125,7 @@ function ConsumerEnergyContent() {
             <input
               type="number"
               value={alertForm.threshold}
-              onChange={(e) => setAlertForm(prev => ({ ...prev, threshold: Number(e.target.value) }))}
+              onChange={createAlertHandler('threshold')}
               placeholder={alertForm.type === 'cost' ? 'Dollar amount' : 'kWh amount'}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
@@ -1132,7 +1137,7 @@ function ConsumerEnergyContent() {
             </label>
             <select
               value={alertForm.period}
-              onChange={(e) => setAlertForm(prev => ({ ...prev, period: e.target.value }))}
+              onChange={createAlertHandler('period')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="hourly">Hourly</option>
@@ -1147,7 +1152,7 @@ function ConsumerEnergyContent() {
               type="checkbox"
               id="alert-enabled"
               checked={alertForm.enabled}
-              onChange={(e) => setAlertForm(prev => ({ ...prev, enabled: e.target.checked }))}
+              onChange={createAlertHandler('enabled')}
               className="mr-2"
             />
             <label htmlFor="alert-enabled" className="text-sm text-gray-700 dark:text-gray-300">

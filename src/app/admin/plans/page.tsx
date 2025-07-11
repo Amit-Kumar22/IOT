@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useStableForm } from '@/hooks/useStableForm';
 import { useToast } from '@/components/providers/ToastProvider';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -70,6 +71,7 @@ export default function AdminPlansPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'subscribers'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [newFeature, setNewFeature] = useState('');
   
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -77,8 +79,12 @@ export default function AdminPlansPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  // Form states
-  const [formData, setFormData] = useState<PlanFormData>({
+  // Selected plan for operations
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initial form data
+  const initialFormData: PlanFormData = {
     name: '',
     description: '',
     price: 0,
@@ -93,13 +99,18 @@ export default function AdminPlansPage() {
     },
     isPopular: false,
     isActive: true
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newFeature, setNewFeature] = useState('');
-  
-  // Selected plan for operations
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  };
+
+  // Use stable form hook
+  const {
+    formData,
+    createHandler,
+    createValueHandler,
+    resetForm,
+    errors: formErrors,
+    setFieldError,
+    updateFormData
+  } = useStableForm(initialFormData);
 
   // Mock data - In real app, this would come from API
   const mockPlans: Plan[] = [
@@ -276,84 +287,56 @@ export default function AdminPlansPage() {
     return errors;
   };
 
-  // Form handlers
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleLimitationChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
+  // Stable form handlers using our hook
+  const handleLimitationChange = React.useCallback((field: string, value: any) => {
+    updateFormData({
       limitations: {
-        ...prev.limitations,
+        ...formData.limitations,
         [field]: value
       }
-    }));
-    
-    // Clear error when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
+    });
+  }, [formData.limitations, updateFormData]);
 
-  const addFeature = () => {
+  const addFeature = React.useCallback(() => {
     if (newFeature.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        features: [...prev.features, newFeature.trim()]
-      }));
+      updateFormData({
+        features: [...formData.features, newFeature.trim()]
+      });
       setNewFeature('');
     }
-  };
+  }, [newFeature, formData.features, updateFormData]);
 
-  const removeFeature = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index)
-    }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      price: 0,
-      currency: 'USD',
-      interval: 'month',
-      features: [],
-      limitations: {
-        devices: 0,
-        storage: 0,
-        apiCalls: 0,
-        support: 'email'
-      },
-      isPopular: false,
-      isActive: true
+  const removeFeature = React.useCallback((index: number) => {
+    updateFormData({
+      features: formData.features.filter((_, i) => i !== index)
     });
-    setFormErrors({});
+  }, [formData.features, updateFormData]);
+
+  const handleCustomReset = React.useCallback(() => {
+    resetForm();
     setNewFeature('');
-  };
+  }, [resetForm]);
+
+  // Create stable handlers for search and sort
+  const handleSearchChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleSortChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as 'name' | 'price' | 'subscribers');
+  }, []);
+
+  const handleNewFeatureChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFeature(e.target.value);
+  }, []);
 
   const handleAddPlan = async () => {
     const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+      // Set multiple errors at once - use any for validation errors
+      Object.entries(errors).forEach(([field, error]) => {
+        setFieldError(field as any, error);
+      });
       return;
     }
 
@@ -395,7 +378,10 @@ export default function AdminPlansPage() {
     
     const errors = validateForm(formData);
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+      // Set multiple errors at once
+      Object.entries(errors).forEach(([field, error]) => {
+        setFieldError(field as any, error);
+      });
       return;
     }
 
@@ -510,7 +496,7 @@ export default function AdminPlansPage() {
 
   const openEditModal = (plan: Plan) => {
     setSelectedPlan(plan);
-    setFormData({
+    updateFormData({
       name: plan.name,
       description: plan.description,
       price: plan.price,
@@ -544,7 +530,7 @@ export default function AdminPlansPage() {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
+            onChange={createHandler('name')}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
               formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
             }`}
@@ -562,7 +548,7 @@ export default function AdminPlansPage() {
           <div className="flex">
             <select
               value={formData.currency}
-              onChange={(e) => handleInputChange('currency', e.target.value)}
+              onChange={createHandler('currency')}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="USD">USD</option>
@@ -574,7 +560,7 @@ export default function AdminPlansPage() {
               min="0"
               step="0.01"
               value={formData.price}
-              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+              onChange={createHandler('price')}
               className={`flex-1 px-3 py-2 border border-l-0 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                 formErrors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
@@ -592,7 +578,7 @@ export default function AdminPlansPage() {
           </label>
           <select
             value={formData.interval}
-            onChange={(e) => handleInputChange('interval', e.target.value)}
+            onChange={createHandler('interval')}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           >
             <option value="month">Monthly</option>
@@ -605,7 +591,7 @@ export default function AdminPlansPage() {
             <input
               type="checkbox"
               checked={formData.isPopular}
-              onChange={(e) => handleInputChange('isPopular', e.target.checked)}
+              onChange={createHandler('isPopular')}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Popular Plan</span>
@@ -614,7 +600,7 @@ export default function AdminPlansPage() {
             <input
               type="checkbox"
               checked={formData.isActive}
-              onChange={(e) => handleInputChange('isActive', e.target.checked)}
+              onChange={createHandler('isActive')}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
@@ -628,7 +614,7 @@ export default function AdminPlansPage() {
         </label>
         <textarea
           value={formData.description}
-          onChange={(e) => handleInputChange('description', e.target.value)}
+          onChange={createHandler('description')}
           rows={3}
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
             formErrors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
@@ -725,7 +711,7 @@ export default function AdminPlansPage() {
             <input
               type="text"
               value={newFeature}
-              onChange={(e) => setNewFeature(e.target.value)}
+              onChange={handleNewFeatureChange}
               onKeyPress={(e) => e.key === 'Enter' && addFeature()}
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               placeholder="Add a feature"
@@ -891,7 +877,7 @@ export default function AdminPlansPage() {
               type="text"
               placeholder="Search plans..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -899,7 +885,7 @@ export default function AdminPlansPage() {
           <div className="flex gap-3">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'subscribers')}
+              onChange={handleSortChange}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="name">Sort by Name</option>

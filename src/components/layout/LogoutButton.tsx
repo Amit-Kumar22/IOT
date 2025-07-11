@@ -24,7 +24,7 @@ export function LogoutButton({ variant = 'button', className = '' }: LogoutButto
     try {
       await logoutMutation().unwrap();
       dispatch(logout());
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API call fails, clear local state
