@@ -7,6 +7,14 @@ import authSlice from '@/store/slices/authSlice';
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: () => '/admin',
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
 }));
 
 // Mock heroicons
@@ -20,6 +28,12 @@ jest.mock('@heroicons/react/24/outline', () => ({
   Bars3Icon: () => <div data-testid="bars-icon">Bars3Icon</div>,
   UserIcon: () => <div data-testid="user-icon">UserIcon</div>,
   BellIcon: () => <div data-testid="bell-icon">BellIcon</div>,
+  Cog6ToothIcon: () => <div data-testid="cog6tooth-icon">Cog6ToothIcon</div>,
+}));
+
+// Mock LogoutButton
+jest.mock('@/components/layout/LogoutButton', () => ({
+  LogoutButton: () => <div data-testid="logout-button">Logout</div>,
 }));
 
 // Create mock store

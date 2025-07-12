@@ -770,166 +770,161 @@ export default function CompanyDevicesPage() {
         title="Edit Device"
         size="lg"
       >
-        {React.createElement(React.useMemo(() => {
-          const DeviceForm = () => (
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Device Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={createHandler('name')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter device name"
-                  />
-                  {formErrors.name && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
-                  )}
-                </div>
+        <form className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Device Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={createHandler('name')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="Enter device name"
+              />
+              {formErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Device Type *
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={createHandler('type')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  >
-                    {deviceTypes.map(type => (
-                      <option key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Device Type *
+              </label>
+              <select
+                value={formData.type}
+                onChange={createHandler('type')}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                {deviceTypes.map(type => (
+                  <option key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={createHandler('location')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      formErrors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="e.g., Building A - Floor 2"
-                  />
-                  {formErrors.location && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.location}</p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Location *
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={createHandler('location')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  formErrors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="e.g., Building A - Floor 2"
+              />
+              {formErrors.location && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.location}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    IP Address *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ipAddress}
-                    onChange={createHandler('ipAddress')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      formErrors.ipAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="192.168.1.100"
-                  />
-                  {formErrors.ipAddress && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.ipAddress}</p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                IP Address *
+              </label>
+              <input
+                type="text"
+                value={formData.ipAddress}
+                onChange={createHandler('ipAddress')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  formErrors.ipAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="192.168.1.100"
+              />
+              {formErrors.ipAddress && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.ipAddress}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Model *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.model}
-                    onChange={createHandler('model')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      formErrors.model ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter model number"
-                  />
-                  {formErrors.model && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.model}</p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Model *
+              </label>
+              <input
+                type="text"
+                value={formData.model}
+                onChange={createHandler('model')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  formErrors.model ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="Enter model number"
+              />
+              {formErrors.model && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.model}</p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Manufacturer *
-                  </label>
-                  <select
-                    value={formData.manufacturer}
-                    onChange={createHandler('manufacturer')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                      formErrors.manufacturer ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                  >
-                    <option value="">Select Manufacturer</option>
-                    {manufacturers.map(mfg => (
-                      <option key={mfg} value={mfg}>{mfg}</option>
-                    ))}
-                  </select>
-                  {formErrors.manufacturer && (
-                    <p className="mt-1 text-sm text-red-600">{formErrors.manufacturer}</p>
-                  )}
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Manufacturer *
+              </label>
+              <select
+                value={formData.manufacturer}
+                onChange={createHandler('manufacturer')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  formErrors.manufacturer ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+              >
+                <option value="">Select Manufacturer</option>
+                {manufacturers.map(mfg => (
+                  <option key={mfg} value={mfg}>{mfg}</option>
+                ))}
+              </select>
+              {formErrors.manufacturer && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.manufacturer}</p>
+              )}
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={createHandler('description')}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Device description and notes..."
-                />
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={createHandler('description')}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              placeholder="Device description and notes..."
+            />
+          </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditModalOpen(false);
-                    setSelectedDevice(null);
-                    resetForm();
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleEditDevice}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Updating...</span>
-                    </>
-                  ) : (
-                    <span>Update Device</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          );
-          return DeviceForm;
-        }, [formData, formErrors, isSubmitting, createHandler, handleEditDevice, resetForm]))}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setSelectedDevice(null);
+                resetForm();
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleEditDevice}
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <span>Update Device</span>
+              )}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* Configuration Modal */}

@@ -462,11 +462,11 @@ export default function AdminUsersPage() {
     }
   };
 
-  const UserForm = React.memo(() => {
+  const UserForm = React.memo(function UserForm() {
     // Create stable input handlers to prevent focus loss
     const handleNameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       handleInputChange('name', e.target.value);
-    }, [handleInputChange]);
+    }, []);
 
     const handleEmailChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
       handleInputChange('email', e.target.value);

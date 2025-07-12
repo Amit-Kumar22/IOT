@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppSelector } from '@/hooks/redux';
+import { ConsumerQuickActions } from '@/components/consumer/layout/ConsumerQuickActions';
+import { ConsumerEnergyOverview } from '@/components/consumer/layout/ConsumerEnergyOverview';
+import { ConsumerHomeOverview } from '@/components/consumer/layout/ConsumerHomeOverview';
 import {
   HomeIcon,
   BoltIcon,
@@ -21,7 +24,8 @@ import {
 
 /**
  * Consumer Dashboard - Smart Home Overview
- * User-friendly interface for home automation and energy management
+ * Enhanced user-friendly interface for home automation and energy management
+ * Mobile-first design with accessibility features
  */
 export default function ConsumerDashboard() {
   const { user } = useAppSelector((state) => state.auth);
@@ -69,12 +73,6 @@ export default function ConsumerDashboard() {
         ]
       }
     ],
-    quickActions: [
-      { id: 'good-night', name: 'Good Night', icon: 'moon', active: false },
-      { id: 'good-morning', name: 'Good Morning', icon: 'sun', active: false },
-      { id: 'away-mode', name: 'Away Mode', icon: 'shield', active: false },
-      { id: 'movie-time', name: 'Movie Time', icon: 'tv', active: false }
-    ],
     recentActivity: [
       {
         id: 1,
@@ -102,28 +100,11 @@ export default function ConsumerDashboard() {
     }
   };
 
-  const QuickActionCard = ({ action }: { action: any }) => (
-    <button className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all duration-200 text-left w-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-lg ${action.active ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} dark:bg-gray-700`}>
-            {action.icon === 'moon' && <ClockIcon className="h-5 w-5" />}
-            {action.icon === 'sun' && <LightBulbIcon className="h-5 w-5" />}
-            {action.icon === 'shield' && <ShieldCheckIcon className="h-5 w-5" />}
-            {action.icon === 'tv' && <AdjustmentsHorizontalIcon className="h-5 w-5" />}
-          </div>
-          <span className="font-medium text-gray-900 dark:text-white">{action.name}</span>
-        </div>
-        <div className={`w-3 h-3 rounded-full ${action.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-      </div>
-    </button>
-  );
-
   const RoomCard = ({ room }: { room: any }) => {
     const onlineDevices = room.devices.filter((d: any) => d.status === 'on').length;
     
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-medium text-gray-900 dark:text-white">{room.name}</h3>
           <span className="text-2xl font-bold text-gray-900 dark:text-white">{room.temperature}°</span>
@@ -162,7 +143,7 @@ export default function ConsumerDashboard() {
     color: string;
     trend?: { value: string; positive: boolean };
   }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
@@ -236,22 +217,17 @@ export default function ConsumerDashboard() {
         />
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {homeData.quickActions.map((action) => (
-              <QuickActionCard key={action.id} action={action} />
-            ))}
-          </div>
-        </div>
+      {/* Enhanced Widget Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions Widget */}
+        <ConsumerQuickActions />
+        
+        {/* Energy Overview Widget */}
+        <ConsumerEnergyOverview />
       </div>
 
       {/* Rooms Overview */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Room Status</h3>
           <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium flex items-center">
@@ -267,35 +243,13 @@ export default function ConsumerDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity & Energy Tip */}
+      {/* Activity & Home Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {homeData.recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className="flex-shrink-0 p-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'automation' ? 'bg-blue-500' : 
-                      activity.type === 'schedule' ? 'bg-green-500' : 'bg-gray-500'
-                    }`}></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-white">{activity.action}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* Home Overview Widget */}
+        <ConsumerHomeOverview />
 
         {/* Energy Tip */}
-        <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0">
               <LightBulbIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -308,7 +262,7 @@ export default function ConsumerDashboard() {
                   Potential savings: {homeData.energyTip.savings}
                 </span>
               </div>
-              <button className="mt-3 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
+              <button className="mt-3 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium transition-colors">
                 Apply This Setting
               </button>
             </div>

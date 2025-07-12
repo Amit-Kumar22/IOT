@@ -56,9 +56,10 @@ describe('AuthMiddleware', () => {
   describe('getUserFromPayload', () => {
     it('should return user data from valid payload', async () => {
       const mockPayload = {
-        userId: 'user123',
-        email: 'test@example.com',
+        userId: '2', // Use existing dummy user ID
+        email: 'manager@acmecorp.com',
         role: 'company',
+        sessionId: 'test-session-123',
         permissions: ['read', 'write'],
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 3600
@@ -67,9 +68,16 @@ describe('AuthMiddleware', () => {
       const user = await AuthMiddleware.getUserFromPayload(mockPayload);
       
       expect(user).toEqual({
-        id: 'user123',
-        email: 'test@example.com',
+        id: '2',
+        email: 'manager@acmecorp.com',
+        name: 'John Smith',
         role: 'company',
+        companyId: 'acme-corp-001',
+        isActive: true,
+        emailVerified: true,
+        lastLoginAt: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
         permissions: expect.any(Array)
       });
     });
@@ -79,9 +87,10 @@ describe('AuthMiddleware', () => {
     it('should return payload for valid token', async () => {
       const { jwtVerify } = require('jose');
       const mockPayload = {
-        userId: 'user123',
-        email: 'test@example.com',
+        userId: '2',
+        email: 'manager@acmecorp.com',
         role: 'company',
+        sessionId: 'test-session-123',
         permissions: ['read', 'write'],
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 3600

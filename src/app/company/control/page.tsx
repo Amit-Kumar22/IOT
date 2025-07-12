@@ -1,536 +1,682 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAppSelector } from '@/hooks/redux';
+import { useToast } from '@/components/providers/ToastProvider';
 import {
-  CommandLineIcon,
-  PlayIcon,
-  StopIcon,
-  PauseIcon,
-  AdjustmentsHorizontalIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  CpuChipIcon,
-  BoltIcon,
-  FireIcon,
-  CogIcon,
-  WrenchScrewdriverIcon,
-  ShieldExclamationIcon,
-  EyeIcon,
   PowerIcon,
+  StopIcon,
+  ExclamationTriangleIcon,
+  ShieldExclamationIcon,
+  CogIcon,
+  EyeIcon,
+  ClockIcon,
+  PlayIcon,
+  PauseIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { SCADAPanel } from '@/components/company/control/SCADAPanel';
+import { ProcessDiagram, DeviceStatus, Alarm, ControlWidget } from '@/types/control';
 
 /**
- * Company Control Page - Industrial Device Control Center
- * SCADA-style interface for real-time industrial equipment control
+ * Company Control Page
+ * SCADA-style industrial control interface
  */
-export default function CompanyControl() {
-  const [selectedSystem, setSelectedSystem] = useState('production-line-a');
-  const [emergencyMode, setEmergencyMode] = useState(false);
-  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+export default function CompanyControlPage() {
+  const { user } = useAppSelector((state) => state.auth);
+  const { showToast } = useToast();
 
-  // Mock industrial control data
-  const controlSystems = {
-    'production-line-a': {
-      id: 'production-line-a',
-      name: 'Production Line A',
-      status: 'running',
-      devices: [
-        {
-          id: 'conveyor-1',
-          name: 'Conveyor Belt #1',
-          type: 'conveyor',
+  // State management
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentDiagram, setCurrentDiagram] = useState<ProcessDiagram | null>(null);
+  const [deviceStatuses, setDeviceStatuses] = useState<Record<string, DeviceStatus>>({});
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const [systemStatus, setSystemStatus] = useState<'running' | 'stopped' | 'emergency' | 'maintenance'>('running');
+
+  // Mock data initialization
+  useEffect(() => {
+    const initializeControlData = async () => {
+      setIsLoading(true);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Mock process diagram
+      const mockDiagram: ProcessDiagram = {
+        id: 'main_process',
+        name: 'Production Line Control',
+        description: 'Main production line SCADA interface',
+        layout: {
+          width: 1200,
+          height: 800,
+          backgroundImage: undefined
+        },
+        widgets: [
+          // Conveyor Belt Control
+          {
+            id: 'conveyor_01_power',
+            type: 'button',
+            deviceId: 'conveyor_01',
+            parameter: 'power',
+            label: 'Conveyor 1',
+            position: { x: 100, y: 100, width: 80, height: 80 },
+            config: {
+              style: 'default',
+              size: 'medium',
+              confirmAction: true,
+              color: '#10B981'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Motor Speed Control
+          {
+            id: 'motor_01_speed',
+            type: 'slider',
+            deviceId: 'motor_01',
+            parameter: 'speed',
+            label: 'Motor Speed',
+            position: { x: 220, y: 100, width: 100, height: 120 },
+            config: {
+              minValue: 0,
+              maxValue: 100,
+              unit: '%',
+              step: 5,
+              color: '#3B82F6'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Temperature Gauge
+          {
+            id: 'furnace_temp',
+            type: 'gauge',
+            deviceId: 'furnace_01',
+            parameter: 'temperature',
+            label: 'Furnace Temp',
+            position: { x: 350, y: 100, width: 100, height: 100 },
+            config: {
+              minValue: 0,
+              maxValue: 1000,
+              unit: '°C',
+              color: '#EF4444'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Pressure Indicator
+          {
+            id: 'pressure_indicator',
+            type: 'indicator',
+            deviceId: 'compressor_01',
+            parameter: 'pressure_ok',
+            label: 'Pressure OK',
+            position: { x: 480, y: 100, width: 80, height: 80 },
+            config: {
+              color: '#10B981',
+              size: 'medium'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Emergency Stop
+          {
+            id: 'emergency_stop',
+            type: 'button',
+            deviceId: 'system',
+            parameter: 'emergency_stop',
+            label: 'E-STOP',
+            position: { x: 600, y: 50, width: 100, height: 100 },
+            config: {
+              style: 'emergency',
+              size: 'large',
+              confirmAction: false,
+              color: '#EF4444'
+            },
+            permissions: ['operator', 'supervisor', 'maintenance'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Production Counter
+          {
+            id: 'production_counter',
+            type: 'text',
+            deviceId: 'counter_01',
+            parameter: 'count',
+            label: 'Production Count',
+            position: { x: 100, y: 250, width: 120, height: 80 },
+            config: {
+              format: '${currentValue} units',
+              color: '#8B5CF6'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          },
+          // Alarm Indicator
+          {
+            id: 'system_alarm',
+            type: 'alarm',
+            deviceId: 'system',
+            parameter: 'alarm_status',
+            label: 'System Alarm',
+            position: { x: 250, y: 250, width: 80, height: 80 },
+            config: {
+              color: '#EF4444',
+              size: 'medium'
+            },
+            permissions: ['operator', 'supervisor'],
+            isVisible: true,
+            isEnabled: true,
+            lastUpdated: new Date()
+          }
+        ],
+        connections: [
+          {
+            id: 'connection_01',
+            fromWidgetId: 'conveyor_01_power',
+            toWidgetId: 'motor_01_speed',
+            type: 'electrical',
+            style: {
+              color: '#10B981',
+              width: 3,
+              pattern: 'solid'
+            },
+            points: [
+              { x: 180, y: 140 },
+              { x: 220, y: 140 }
+            ],
+            isAnimated: true,
+            direction: 'forward'
+          },
+          {
+            id: 'connection_02',
+            fromWidgetId: 'motor_01_speed',
+            toWidgetId: 'furnace_temp',
+            type: 'pipe',
+            style: {
+              color: '#3B82F6',
+              width: 4,
+              pattern: 'solid'
+            },
+            points: [
+              { x: 320, y: 160 },
+              { x: 350, y: 160 }
+            ],
+            isAnimated: true,
+            direction: 'forward'
+          }
+        ],
+        zones: [
+          {
+            id: 'production_zone',
+            name: 'Production Zone',
+            type: 'production',
+            bounds: { x: 80, y: 80, width: 400, height: 200 },
+            color: '#10B981',
+            opacity: 0.1,
+            isVisible: true
+          },
+          {
+            id: 'safety_zone',
+            name: 'Safety Systems',
+            type: 'safety',
+            bounds: { x: 580, y: 30, width: 140, height: 140 },
+            color: '#EF4444',
+            opacity: 0.15,
+            isVisible: true
+          }
+        ],
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Mock device statuses
+      const mockDeviceStatuses: Record<string, DeviceStatus> = {
+        conveyor_01: {
+          deviceId: 'conveyor_01',
+          timestamp: new Date(),
+          parameters: {
+            power: { value: true, unit: '', quality: 'good', timestamp: new Date() },
+            speed: { value: 75, unit: '%', quality: 'good', timestamp: new Date() },
+            current: { value: 12.5, unit: 'A', quality: 'good', timestamp: new Date() }
+          },
+          alarms: [],
+          warnings: [],
           status: 'running',
-          speed: 75, // %
-          temperature: 42, // °C
-          power: 850, // W
-          controlType: 'automatic',
-          lastMaintenance: '2024-12-01',
-          nextMaintenance: '2024-12-15',
-          operatingHours: 142.5,
-          alerts: []
+          mode: 'auto'
         },
-        {
-          id: 'robotic-arm-2',
-          name: 'Robotic Arm #2',
-          type: 'robot',
+        motor_01: {
+          deviceId: 'motor_01',
+          timestamp: new Date(),
+          parameters: {
+            speed: { value: 75, unit: '%', quality: 'good', timestamp: new Date() },
+            torque: { value: 85, unit: 'Nm', quality: 'good', timestamp: new Date() },
+            temperature: { value: 65, unit: '°C', quality: 'good', timestamp: new Date() }
+          },
+          alarms: [],
+          warnings: [],
           status: 'running',
-          position: { x: 120, y: 85, z: 45 },
-          load: 12.5, // kg
-          cycles: 8642,
-          controlType: 'automatic',
-          lastMaintenance: '2024-11-28',
-          nextMaintenance: '2024-12-12',
-          operatingHours: 156.2,
-          alerts: ['performance_degradation']
+          mode: 'auto'
         },
-        {
-          id: 'press-machine-3',
-          name: 'Hydraulic Press #3',
-          type: 'press',
-          status: 'stopped',
-          pressure: 0, // bar
-          force: 0, // kN
-          cycles: 15684,
-          controlType: 'manual',
-          lastMaintenance: '2024-12-02',
-          nextMaintenance: '2024-12-10',
-          operatingHours: 98.7,
-          alerts: ['maintenance_required']
-        },
-        {
-          id: 'quality-scanner-4',
-          name: 'Quality Scanner #4',
-          type: 'sensor',
+        furnace_01: {
+          deviceId: 'furnace_01',
+          timestamp: new Date(),
+          parameters: {
+            temperature: { value: 750, unit: '°C', quality: 'good', timestamp: new Date() },
+            setpoint: { value: 800, unit: '°C', quality: 'good', timestamp: new Date() },
+            heating: { value: true, unit: '', quality: 'good', timestamp: new Date() }
+          },
+          alarms: ['alarm_01'],
+          warnings: [],
           status: 'running',
-          scanRate: 45, // items/min
-          defectRate: 2.3, // %
-          accuracy: 99.7, // %
-          controlType: 'automatic',
-          lastMaintenance: '2024-11-25',
-          nextMaintenance: '2024-12-18',
-          operatingHours: 187.3,
-          alerts: []
+          mode: 'auto'
+        },
+        compressor_01: {
+          deviceId: 'compressor_01',
+          timestamp: new Date(),
+          parameters: {
+            pressure_ok: { value: true, unit: '', quality: 'good', timestamp: new Date() },
+            pressure: { value: 8.5, unit: 'bar', quality: 'good', timestamp: new Date() },
+            flow: { value: 120, unit: 'L/min', quality: 'good', timestamp: new Date() }
+          },
+          alarms: [],
+          warnings: [],
+          status: 'running',
+          mode: 'auto'
+        },
+        counter_01: {
+          deviceId: 'counter_01',
+          timestamp: new Date(),
+          parameters: {
+            count: { value: 1247, unit: 'units', quality: 'good', timestamp: new Date() },
+            rate: { value: 45, unit: 'units/min', quality: 'good', timestamp: new Date() }
+          },
+          alarms: [],
+          warnings: [],
+          status: 'running',
+          mode: 'auto'
+        },
+        system: {
+          deviceId: 'system',
+          timestamp: new Date(),
+          parameters: {
+            emergency_stop: { value: false, unit: '', quality: 'good', timestamp: new Date() },
+            alarm_status: { value: true, unit: '', quality: 'good', timestamp: new Date() }
+          },
+          alarms: ['alarm_01'],
+          warnings: [],
+          status: 'running',
+          mode: 'auto'
         }
-      ]
-    },
-    'assembly-line-b': {
-      id: 'assembly-line-b',
-      name: 'Assembly Line B',
-      status: 'paused',
-      devices: [
+      };
+
+      // Mock alarms
+      const mockAlarms: Alarm[] = [
         {
-          id: 'welding-station-1',
-          name: 'Welding Station #1',
-          type: 'welder',
-          status: 'standby',
-          temperature: 28,
-          current: 0, // A
-          voltage: 0, // V
-          controlType: 'automatic',
-          lastMaintenance: '2024-11-30',
-          nextMaintenance: '2024-12-14',
-          operatingHours: 203.8,
-          alerts: []
+          id: 'alarm_01',
+          deviceId: 'furnace_01',
+          parameter: 'temperature',
+          message: 'Furnace temperature approaching setpoint limit',
+          severity: 'high',
+          priority: 2,
+          timestamp: new Date(Date.now() - 300000), // 5 minutes ago
+          status: 'active',
+          category: 'process',
+          location: 'Production Zone - Furnace 01',
+          actions: []
         },
         {
-          id: 'assembly-robot-2',
-          name: 'Assembly Robot #2',
-          type: 'robot',
-          status: 'paused',
-          position: { x: 200, y: 150, z: 80 },
-          load: 0,
-          cycles: 12456,
-          controlType: 'automatic',
-          lastMaintenance: '2024-12-01',
-          nextMaintenance: '2024-12-15',
-          operatingHours: 178.9,
-          alerts: []
+          id: 'alarm_02',
+          deviceId: 'motor_01',
+          parameter: 'vibration',
+          message: 'Motor vibration levels elevated',
+          severity: 'medium',
+          priority: 3,
+          timestamp: new Date(Date.now() - 120000), // 2 minutes ago
+          status: 'active',
+          category: 'equipment',
+          location: 'Production Zone - Motor 01',
+          actions: []
         }
-      ]
-    },
-    'packaging-line-c': {
-      id: 'packaging-line-c',
-      name: 'Packaging Line C',
-      status: 'error',
-      devices: [
-        {
-          id: 'packaging-machine-1',
-          name: 'Packaging Machine #1',
-          type: 'packaging',
-          status: 'error',
-          speed: 0,
-          packagesPerMinute: 0,
-          errorCode: 'E001',
-          controlType: 'automatic',
-          lastMaintenance: '2024-11-27',
-          nextMaintenance: '2024-12-11',
-          operatingHours: 234.1,
-          alerts: ['critical_error', 'immediate_attention']
+      ];
+
+      setCurrentDiagram(mockDiagram);
+      setDeviceStatuses(mockDeviceStatuses);
+      setAlarms(mockAlarms);
+      setIsLoading(false);
+    };
+
+    initializeControlData();
+  }, []);
+
+  // Handle control commands
+  const handleControlCommand = useCallback(async (deviceId: string, parameter: string, value: any) => {
+    try {
+      console.log(`Control command: ${deviceId}.${parameter} = ${value}`);
+      
+      // Update device status locally (simulate API response)
+      setDeviceStatuses(prev => ({
+        ...prev,
+        [deviceId]: {
+          ...prev[deviceId],
+          parameters: {
+            ...prev[deviceId]?.parameters,
+            [parameter]: {
+              value,
+              unit: prev[deviceId]?.parameters[parameter]?.unit || '',
+              quality: 'good',
+              timestamp: new Date()
+            }
+          }
         }
-      ]
-    }
-  };
+      }));
 
-  const systemCommands = [
-    { id: 'start', name: 'Start System', icon: PlayIcon, color: 'bg-green-600', requiredAuth: false },
-    { id: 'stop', name: 'Stop System', icon: StopIcon, color: 'bg-red-600', requiredAuth: true },
-    { id: 'pause', name: 'Pause System', icon: PauseIcon, color: 'bg-yellow-600', requiredAuth: false },
-    { id: 'reset', name: 'Reset System', icon: ArrowPathIcon, color: 'bg-blue-600', requiredAuth: true },
-    { id: 'emergency', name: 'Emergency Stop', icon: ShieldExclamationIcon, color: 'bg-red-800', requiredAuth: true }
-  ];
-
-  const deviceCommands = [
-    { id: 'start', name: 'Start', icon: PlayIcon, color: 'text-green-600' },
-    { id: 'stop', name: 'Stop', icon: StopIcon, color: 'text-red-600' },
-    { id: 'pause', name: 'Pause', icon: PauseIcon, color: 'text-yellow-600' },
-    { id: 'reset', name: 'Reset', icon: ArrowPathIcon, color: 'text-blue-600' }
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running': return 'text-green-600 bg-green-100 dark:bg-green-900/20';
-      case 'stopped': return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20';
-      case 'paused': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20';
-      case 'error': return 'text-red-600 bg-red-100 dark:bg-red-900/20';
-      case 'standby': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/20';
-      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20';
-    }
-  };
-
-  const getDeviceIcon = (type: string) => {
-    switch (type) {
-      case 'conveyor': return CpuChipIcon;
-      case 'robot': return WrenchScrewdriverIcon;
-      case 'press': return CogIcon;
-      case 'sensor': return EyeIcon;
-      case 'welder': return BoltIcon;
-      case 'packaging': return CommandLineIcon;
-      default: return CpuChipIcon;
-    }
-  };
-
-  const executeSystemCommand = (command: string) => {
-    if (command === 'emergency') {
-      setEmergencyMode(true);
-    }
-    console.log(`Executing system command: ${command} on ${selectedSystem}`);
-    // In real implementation, this would call the industrial control API
-  };
-
-  const executeDeviceCommand = (deviceId: string, command: string) => {
-    console.log(`Executing device command: ${command} on device ${deviceId}`);
-    // In real implementation, this would call the device control API
-  };
-
-  const toggleDeviceSelection = (deviceId: string) => {
-    setSelectedDevices(prev => 
-      prev.includes(deviceId) 
-        ? prev.filter(id => id !== deviceId)
-        : [...prev, deviceId]
-    );
-  };
-
-  const SystemOverview = () => {
-    const currentSystem = controlSystems[selectedSystem as keyof typeof controlSystems];
-    
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">{currentSystem.name}</h3>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentSystem.status)}`}>
-                  {currentSystem.status.toUpperCase()}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {currentSystem.devices.length} devices
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              {emergencyMode && (
-                <div className="flex items-center text-red-600 bg-red-100 dark:bg-red-900/20 px-3 py-1 rounded-lg">
-                  <ExclamationTriangleIcon className="h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">EMERGENCY MODE</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      // Special handling for emergency stop
+      if (parameter === 'emergency_stop' && value === true) {
+        setSystemStatus('emergency');
+        showToast({
+          title: 'Emergency Stop Activated',
+          message: 'All systems have been safely shut down',
+          type: 'warning'
+        });
         
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {systemCommands.map((command) => {
-              const IconComponent = command.icon;
-              return (
-                <button
-                  key={command.id}
-                  onClick={() => executeSystemCommand(command.id)}
-                  disabled={emergencyMode && command.id !== 'reset'}
-                  className={`${command.color} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg flex flex-col items-center space-y-1 transition-all`}
-                >
-                  <IconComponent className="h-5 w-5" />
-                  <span className="text-xs font-medium">{command.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
+        // Reset emergency stop after 10 seconds (simulation)
+        setTimeout(() => {
+          setSystemStatus('running');
+          setDeviceStatuses(prev => ({
+            ...prev,
+            system: {
+              ...prev.system,
+              parameters: {
+                ...prev.system.parameters,
+                emergency_stop: {
+                  value: false,
+                  unit: '',
+                  quality: 'good',
+                  timestamp: new Date()
+                }
+              }
+            }
+          }));
+        }, 10000);
+      }
 
-  const DeviceControl = ({ device }: { device: any }) => {
-    const IconComponent = getDeviceIcon(device.type);
-    const isSelected = selectedDevices.includes(device.id);
-    
+      showToast({
+        title: 'Command Executed',
+        message: `${deviceId}.${parameter} set to ${value}`,
+        type: 'success'
+      });
+
+    } catch (error) {
+      showToast({
+        title: 'Command Failed',
+        message: `Failed to execute command on ${deviceId}`,
+        type: 'error'
+      });
+    }
+  }, [showToast]);
+
+  // Handle alarm acknowledgment
+  const handleAlarmAcknowledge = useCallback((alarmId: string) => {
+    setAlarms(prev => prev.map(alarm => 
+      alarm.id === alarmId 
+        ? { 
+            ...alarm, 
+            status: 'acknowledged' as const,
+            acknowledgedAt: new Date(),
+            acknowledgedBy: user?.email || 'operator'
+          }
+        : alarm
+    ));
+
+    showToast({
+      title: 'Alarm Acknowledged',
+      message: 'Alarm has been acknowledged by operator',
+      type: 'success'
+    });
+  }, [user?.email, showToast]);
+
+  // Handle emergency stop
+  const handleEmergencyStop = useCallback(() => {
+    handleControlCommand('system', 'emergency_stop', true);
+  }, [handleControlCommand]);
+
+  // Handle diagram updates (for edit mode)
+  const handleDiagramUpdate = useCallback((updatedDiagram: ProcessDiagram) => {
+    setCurrentDiagram(updatedDiagram);
+    showToast({
+      title: 'Diagram Updated',
+      message: 'Process diagram has been saved',
+      type: 'success'
+    });
+  }, [showToast]);
+
+  // Auto-refresh device data
+  useEffect(() => {
+    if (systemStatus === 'emergency') return;
+
+    const interval = setInterval(() => {
+      // Simulate real-time data updates
+      setDeviceStatuses(prev => {
+        const updated = { ...prev };
+        
+        // Update some random values to simulate live data
+        Object.keys(updated).forEach(deviceId => {
+          const device = updated[deviceId];
+          if (device.status === 'running') {
+            // Add small random variations to simulate real sensors
+            Object.keys(device.parameters).forEach(param => {
+              const current = device.parameters[param];
+              if (typeof current.value === 'number' && param !== 'count') {
+                const variation = (Math.random() - 0.5) * 2; // ±1% variation
+                const newValue = current.value + (current.value * variation * 0.01);
+                device.parameters[param] = {
+                  ...current,
+                  value: Math.max(0, newValue),
+                  timestamp: new Date()
+                };
+              }
+            });
+          }
+        });
+
+        return updated;
+      });
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [systemStatus]);
+
+  if (isLoading) {
     return (
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow border-2 transition-all ${
-        isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10' : 'border-transparent'
-      }`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <IconComponent className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white">{device.name}</h4>
-                <div className="flex items-center space-x-2">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(device.status)}`}>
-                    {device.status.toUpperCase()}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {device.controlType}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleDeviceSelection(device.id)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-lg shadow-lg text-white p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-white/20 rounded w-48 mb-2"></div>
+            <div className="h-4 bg-white/20 rounded w-64"></div>
           </div>
+        </div>
 
-          {/* Device-specific parameters */}
-          <div className="space-y-3 mb-4">
-            {device.type === 'conveyor' && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Speed</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.speed}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Temperature</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.temperature}°C</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Power</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.power}W</span>
-                </div>
-              </>
-            )}
-            
-            {device.type === 'robot' && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Position</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    X:{device.position.x} Y:{device.position.y} Z:{device.position.z}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Load</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.load}kg</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Cycles</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.cycles.toLocaleString()}</span>
-                </div>
-              </>
-            )}
-
-            {device.type === 'press' && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Pressure</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.pressure} bar</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Force</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.force} kN</span>
-                </div>
-              </>
-            )}
-
-            {device.type === 'sensor' && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Scan Rate</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.scanRate}/min</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Accuracy</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.accuracy}%</span>
-                </div>
-              </>
-            )}
-
-            {device.type === 'welder' && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Temperature</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.temperature}°C</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Current</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{device.current}A</span>
-                </div>
-              </>
-            )}
-
-            {device.type === 'packaging' && device.errorCode && (
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Error Code</span>
-                <span className="text-sm font-medium text-red-600 dark:text-red-400">{device.errorCode}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Device alerts */}
-          {device.alerts && device.alerts.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Active Alerts</div>
-              <div className="space-y-1">
-                {device.alerts.map((alert: string, index: number) => (
-                  <div key={index} className="flex items-center text-xs text-red-600 dark:text-red-400">
-                    <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
-                    <span>{alert.replace(/_/g, ' ').toUpperCase()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Device controls */}
-          <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex space-x-2">
-              {deviceCommands.map((command) => {
-                const IconComponent = command.icon;
-                return (
-                  <button
-                    key={command.id}
-                    onClick={() => executeDeviceCommand(device.id, command.id)}
-                    disabled={emergencyMode && command.id !== 'stop'}
-                    className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed ${command.color}`}
-                    title={command.name}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                  </button>
-                );
-              })}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {device.operatingHours}h
-            </div>
+        {/* Control Panel Skeleton */}
+        <div className="bg-gray-900 rounded-lg p-6 h-96 animate-pulse">
+          <div className="grid grid-cols-4 gap-4 h-full">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-gray-800 rounded-lg"></div>
+            ))}
           </div>
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Control Center</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Industrial equipment control and monitoring
-              </p>
+      <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-lg shadow-lg text-white p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Process Control</h1>
+            <p className="text-red-100 mt-1">
+              SCADA interface for industrial process monitoring and control
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                systemStatus === 'running' ? 'bg-green-400 animate-pulse' :
+                systemStatus === 'emergency' ? 'bg-red-400 animate-pulse' :
+                'bg-yellow-400 animate-pulse'
+              }`} />
+              <span className="font-medium">
+                {systemStatus.toUpperCase()}
+              </span>
             </div>
-            <div className="flex items-center space-x-3">
-              <select
-                value={selectedSystem}
-                onChange={(e) => setSelectedSystem(e.target.value)}
-                className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white"
-              >
-                {Object.values(controlSystems).map((system) => (
-                  <option key={system.id} value={system.id}>
-                    {system.name}
-                  </option>
-                ))}
-              </select>
-              {emergencyMode && (
-                <button
-                  onClick={() => setEmergencyMode(false)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                >
-                  Reset Emergency
-                </button>
-              )}
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <CogIcon className="h-4 w-4" />
+              <span>{isEditMode ? 'Exit Edit' : 'Edit Mode'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center">
+            <PlayIcon className="h-8 w-8 text-green-500 mr-3" />
+            <div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Running Devices</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                {Object.values(deviceStatuses).filter(d => d.status === 'running').length}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Safety Notice */}
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
           <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mr-2" />
-            <div className="text-sm">
-              <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                Safety Notice: All control operations are logged and require proper authorization.
-              </p>
-              <p className="text-yellow-700 dark:text-yellow-300 mt-1">
-                Emergency stop procedures will immediately halt all selected equipment.
-              </p>
+            <ExclamationTriangleIcon className="h-8 w-8 text-yellow-500 mr-3" />
+            <div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Active Alarms</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                {alarms.filter(a => a.status === 'active').length}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center">
+            <ClockIcon className="h-8 w-8 text-blue-500 mr-3" />
+            <div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">System Uptime</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">98.5%</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center">
+            <PowerIcon className="h-8 w-8 text-purple-500 mr-3" />
+            <div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Energy Usage</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">247 kW</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* System Overview and Controls */}
-      <SystemOverview />
-
-      {/* Bulk Device Controls */}
-      {selectedDevices.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                Bulk Control ({selectedDevices.length} devices selected)
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-200">
-                Apply commands to all selected devices simultaneously
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              {deviceCommands.map((command) => {
-                const IconComponent = command.icon;
-                return (
-                  <button
-                    key={command.id}
-                    onClick={() => selectedDevices.forEach(deviceId => executeDeviceCommand(deviceId, command.id))}
-                    className={`p-2 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 ${command.color}`}
-                    title={`${command.name} All Selected`}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      {/* Main SCADA Panel */}
+      {currentDiagram && (
+        <SCADAPanel
+          diagram={currentDiagram}
+          deviceStatuses={deviceStatuses}
+          alarms={alarms}
+          isEditing={isEditMode}
+          onDiagramUpdate={handleDiagramUpdate}
+          onCommand={handleControlCommand}
+          onAlarmAcknowledge={handleAlarmAcknowledge}
+          onEmergencyStop={handleEmergencyStop}
+          userPermissions={['operator', 'supervisor']}
+          userName={user?.email?.split('@')[0] || 'Operator'}
+        />
       )}
 
-      {/* Device Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {controlSystems[selectedSystem as keyof typeof controlSystems].devices.map((device) => (
-          <DeviceControl key={device.id} device={device} />
-        ))}
-      </div>
+      {/* System Information Panel */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            System Information
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Production Status</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Current Rate:</span>
+                  <span className="font-medium">45 units/min</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Total Today:</span>
+                  <span className="font-medium">1,247 units</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
+                  <span className="font-medium text-green-600">94.2%</span>
+                </div>
+              </div>
+            </div>
 
-      {/* Emergency Protocols */}
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-        <div className="flex items-start space-x-3">
-          <ShieldExclamationIcon className="h-6 w-6 text-red-600 dark:text-red-400 mt-1" />
-          <div>
-            <h3 className="font-medium text-red-900 dark:text-red-100">Emergency Protocols</h3>
-            <div className="mt-2 text-sm text-red-800 dark:text-red-200">
-              <ul className="list-disc list-inside space-y-1">
-                <li>Emergency stop will immediately halt all equipment and trigger safety protocols</li>
-                <li>All emergency actions are logged with timestamp and operator identification</li>
-                <li>System reset requires supervisor authorization after emergency stop</li>
-                <li>Contact emergency response team: +1-800-EMERGENCY</li>
-              </ul>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">System Health</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">CPU Usage:</span>
+                  <span className="font-medium">23%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Memory:</span>
+                  <span className="font-medium">67%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Network:</span>
+                  <span className="font-medium text-green-600">Good</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Recent Actions</h4>
+              <div className="space-y-2 text-sm">
+                <div className="text-gray-600 dark:text-gray-400">
+                  Motor speed adjusted to 75%
+                </div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  Temperature alarm acknowledged
+                </div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  System status check completed
+                </div>
+              </div>
             </div>
           </div>
         </div>

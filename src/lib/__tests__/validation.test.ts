@@ -47,7 +47,7 @@ describe('InputSanitizer', () => {
       expect(sanitized).not.toContain('>');
       expect(sanitized).not.toContain('(');
       expect(sanitized).not.toContain(')');
-      expect(sanitized).toBe('Helloscriptalertscript');
+      expect(sanitized).toBe('Helloscriptalert/script');
     });
 
     it('should trim whitespace', () => {

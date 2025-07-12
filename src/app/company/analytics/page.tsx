@@ -55,29 +55,125 @@ export default function CompanyAnalytics() {
   // Analytics data state
   const [analyticsData, setAnalyticsData] = useState({
     kpis: [
-      { id: 'efficiency', name: 'Operational Efficiency', value: 87.5, target: 90, trend: 'up' },
-      { id: 'downtime', name: 'System Downtime', value: 2.3, target: 5, trend: 'down' },
-      { id: 'throughput', name: 'Production Throughput', value: 1250, target: 1200, trend: 'up' },
-      { id: 'quality', name: 'Quality Score', value: 96.2, target: 95, trend: 'up' },
+      { 
+        id: 'oee', 
+        name: 'Overall Equipment Effectiveness', 
+        value: 87.8, 
+        unit: '%',
+        target: 90, 
+        trend: { value: 2.1, positive: true },
+        category: 'performance',
+        color: 'bg-blue-500'
+      },
+      { 
+        id: 'mtbf', 
+        name: 'Mean Time Between Failures', 
+        value: 342, 
+        unit: 'hours',
+        target: 300, 
+        trend: { value: 15.2, positive: true },
+        category: 'reliability',
+        color: 'bg-green-500'
+      },
+      { 
+        id: 'mttr', 
+        name: 'Mean Time To Repair', 
+        value: 1.2, 
+        unit: 'hours',
+        target: 2.0, 
+        trend: { value: 0.3, positive: false },
+        category: 'maintenance',
+        color: 'bg-yellow-500'
+      },
+      { 
+        id: 'energy_efficiency', 
+        name: 'Energy Efficiency', 
+        value: 92.4, 
+        unit: '%',
+        target: 85, 
+        trend: { value: 3.7, positive: true },
+        category: 'energy',
+        color: 'bg-purple-500'
+      }
     ],
     sites: [
-      { id: 'site1', name: 'Manufacturing Plant A', devices: 45, alerts: 2, efficiency: 89.2, status: 'optimal', uptime: 98.5 },
-      { id: 'site2', name: 'Warehouse B', devices: 32, alerts: 1, efficiency: 91.8, status: 'good', uptime: 96.2 },
-      { id: 'site3', name: 'Distribution Center', devices: 28, alerts: 0, efficiency: 93.1, status: 'optimal', uptime: 99.1 },
+      { 
+        id: 'manufacturing-floor-a', 
+        name: 'Manufacturing Floor A', 
+        devices: 89, 
+        alerts: 3, 
+        efficiency: 91.3, 
+        status: 'optimal', 
+        uptime: 96.2 
+      },
+      { 
+        id: 'warehouse-b', 
+        name: 'Warehouse B', 
+        devices: 67, 
+        alerts: 5, 
+        efficiency: 85.7, 
+        status: 'good', 
+        uptime: 93.8 
+      },
+      { 
+        id: 'assembly-line-c', 
+        name: 'Assembly Line C', 
+        devices: 91, 
+        alerts: 4, 
+        efficiency: 88.2, 
+        status: 'warning', 
+        uptime: 91.5 
+      }
     ],
     overview: {
-      totalDevices: 105,
-      activeDevices: 98,
-      totalAlerts: 3,
-      avgEfficiency: 91.4,
-      uptime: 97.9,
-      efficiency: 91.4,
-      alerts: 3,
+      totalDevices: 247,
+      activeDevices: 231,
+      totalAlerts: 12,
+      avgEfficiency: 88.4,
+      uptime: 93.8,
+      efficiency: 88.4,
+      alerts: 12,
+      energyConsumption: 2847.5,
+      costSavings: 18.3,
+      criticalIssues: 2
     },
+    deviceCategories: [
+      { name: 'Production Equipment', count: 145, uptime: 94.8, efficiency: 89.2 },
+      { name: 'Environmental Sensors', count: 56, uptime: 98.1, efficiency: 95.4 },
+      { name: 'Security Systems', count: 32, uptime: 99.2, efficiency: 97.8 },
+      { name: 'Energy Monitoring', count: 14, uptime: 96.7, efficiency: 92.1 }
+    ],
     alerts: [
-      { id: 1, type: 'warning', message: 'High CPU usage on Device #127', site: 'Manufacturing Plant A', timestamp: '2024-01-15T10:30:00Z' },
-      { id: 2, type: 'error', message: 'Connection lost to Sensor #45', site: 'Warehouse B', timestamp: '2024-01-15T09:15:00Z' },
-      { id: 3, type: 'info', message: 'Scheduled maintenance reminder', site: 'Distribution Center', timestamp: '2024-01-15T08:00:00Z' },
+      {
+        id: 1,
+        severity: 'critical',
+        type: 'equipment_failure',
+        device: 'Conveyor Belt #3',
+        site: 'Manufacturing Floor A',
+        message: 'Motor overheating detected',
+        timestamp: '2 minutes ago',
+        impact: 'Production line stopped'
+      },
+      {
+        id: 2,
+        severity: 'warning',
+        type: 'performance_degradation',
+        device: 'Robotic Arm #7',
+        site: 'Assembly Line C',
+        message: 'Performance below threshold',
+        timestamp: '15 minutes ago',
+        impact: 'Reduced throughput'
+      },
+      {
+        id: 3,
+        severity: 'info',
+        type: 'maintenance_due',
+        device: 'Air Compressor #2',
+        site: 'Warehouse B',
+        message: 'Scheduled maintenance required',
+        timestamp: '1 hour ago',
+        impact: 'No immediate impact'
+      }
     ],
     trends: {
       hourly: [
@@ -166,188 +262,11 @@ export default function CompanyAnalytics() {
   // Handle manual refresh
   const handleManualRefresh = () => {
     console.log('Refreshing analytics data...');
-    showToast({ message: 'Analytics data refreshed successfully!', type: 'success' });
-  };
-
-  // Mock industrial analytics data - extend the state data
-  const extendedAnalyticsData = {
-    ...analyticsData,
-    deviceCategories: [
-      { id: 'sensors', name: 'Sensors', count: 89, status: 'operational' },
-      { id: 'controllers', name: 'Controllers', count: 45, status: 'operational' },
-      { id: 'actuators', name: 'Actuators', count: 78, status: 'operational' },
-      { id: 'gateways', name: 'Gateways', count: 12, status: 'operational' }
-    ],
-    overview: {
-      totalDevices: 247,
-      activeDevices: 231,
-      uptime: 94.2,
-      efficiency: 87.8,
-      energyConsumption: 2847.5, // kWh
-      costSavings: 18.3, // %
-      alerts: 12,
-      criticalIssues: 2
-    },
-    kpis: [
-      {
-        id: 'oee',
-        name: 'Overall Equipment Effectiveness',
-        value: 87.8,
-        unit: '%',
-        target: 90,
-        trend: { value: 2.1, positive: true },
-        category: 'performance',
-        color: 'bg-blue-500'
-      },
-      {
-        id: 'mtbf',
-        name: 'Mean Time Between Failures',
-        value: 342,
-        unit: 'hours',
-        target: 300,
-        trend: { value: 15.2, positive: true },
-        category: 'reliability',
-        color: 'bg-green-500'
-      },
-      {
-        id: 'mttr',
-        name: 'Mean Time To Repair',
-        value: 1.2,
-        unit: 'hours',
-        target: 2.0,
-        trend: { value: 0.3, positive: false },
-        category: 'maintenance',
-        color: 'bg-yellow-500'
-      },
-      {
-        id: 'energy_efficiency',
-        name: 'Energy Efficiency',
-        value: 92.4,
-        unit: '%',
-        target: 85,
-        trend: { value: 3.7, positive: true },
-        category: 'energy',
-        color: 'bg-purple-500'
-      }
-    ],
-    sites: [
-      {
-        id: 'manufacturing-floor-a',
-        name: 'Manufacturing Floor A',
-        devices: 89,
-        uptime: 96.2,
-        efficiency: 91.3,
-        alerts: 3,
-        status: 'optimal'
-      },
-      {
-        id: 'warehouse-b',
-        name: 'Warehouse B',
-        devices: 67,
-        uptime: 93.8,
-        efficiency: 85.7,
-        alerts: 5,
-        status: 'good'
-      },
-      {
-        id: 'assembly-line-c',
-        name: 'Assembly Line C',
-        color: 'bg-yellow-500'
-      },
-      {
-        id: 'energy_efficiency',
-        name: 'Energy Efficiency',
-        value: 92.4,
-        unit: '%',
-        target: 85,
-        trend: { value: 3.7, positive: true },
-        category: 'energy',
-        color: 'bg-purple-500'
-      }
-    ],
-    sites: [
-      {
-        id: 'manufacturing-floor-a',
-        name: 'Manufacturing Floor A',
-        devices: 89,
-        uptime: 96.2,
-        efficiency: 91.3,
-        alerts: 3,
-        status: 'optimal'
-      },
-      {
-        id: 'warehouse-b',
-        name: 'Warehouse B',
-        devices: 67,
-        uptime: 93.8,
-        efficiency: 85.7,
-        alerts: 5,
-        status: 'good'
-      },
-      {
-        id: 'assembly-line-c',
-        name: 'Assembly Line C',
-        devices: 91,
-        uptime: 91.5,
-        efficiency: 88.2,
-        alerts: 4,
-        status: 'warning'
-      }
-    ],
-    deviceCategories: [
-      { name: 'Production Equipment', count: 145, uptime: 94.8, efficiency: 89.2 },
-      { name: 'Environmental Sensors', count: 56, uptime: 98.1, efficiency: 95.4 },
-      { name: 'Security Systems', count: 32, uptime: 99.2, efficiency: 97.8 },
-      { name: 'Energy Monitoring', count: 14, uptime: 96.7, efficiency: 92.1 }
-    ],
-    trends: {
-      hourly: Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        uptime: 90 + Math.random() * 8,
-        performance: 80 + Math.random() * 15,
-        energy: 85 + Math.random() * 10,
-        alerts: Math.floor(Math.random() * 5)
-      })),
-      daily: Array.from({ length: 30 }, (_, i) => ({
-        day: i + 1,
-        uptime: 88 + Math.random() * 10,
-        performance: 82 + Math.random() * 12,
-        energy: 86 + Math.random() * 8,
-        incidents: Math.floor(Math.random() * 3)
-      }))
-    },
-    alerts: [
-      {
-        id: 1,
-        severity: 'critical',
-        type: 'equipment_failure',
-        device: 'Conveyor Belt #3',
-        site: 'Manufacturing Floor A',
-        message: 'Motor overheating detected',
-        timestamp: '2 minutes ago',
-        impact: 'Production line stopped'
-      },
-      {
-        id: 2,
-        severity: 'warning',
-        type: 'performance_degradation',
-        device: 'Robotic Arm #7',
-        site: 'Assembly Line C',
-        message: 'Performance below threshold',
-        timestamp: '15 minutes ago',
-        impact: 'Reduced throughput'
-      },
-      {
-        id: 3,
-        severity: 'info',
-        type: 'maintenance_due',
-        device: 'Air Compressor #2',
-        site: 'Warehouse B',
-        message: 'Scheduled maintenance required',
-        timestamp: '1 hour ago',
-        impact: 'No immediate impact'
-      }
-    ]
+    showToast({ 
+      title: 'Success',
+      message: 'Analytics data refreshed successfully!', 
+      type: 'success' 
+    });
   };
 
   const MetricCard = ({ 
