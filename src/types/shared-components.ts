@@ -83,6 +83,18 @@ export interface ChartWidgetProps extends BaseComponentProps {
   error?: string;
   onDataPointClick?: (point: ChartDataPoint) => void;
   refreshInterval?: number;
+  showLegend?: boolean;
+  showGrid?: boolean;
+  showTooltip?: boolean;
+  animate?: boolean;
+  colors?: string[];
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  onRefresh?: () => void;
+  onExport?: (format: 'png' | 'svg' | 'pdf') => void;
+  onFullscreen?: (isFullscreen: boolean) => void;
+  loading?: boolean;
+  customConfig?: Record<string, any>;
 }
 
 // Pricing related types
