@@ -38,7 +38,7 @@ export interface Device {
 
 export interface DeviceCardProps extends BaseComponentProps {
   device: Device;
-  variant: 'compact' | 'detailed' | 'control';
+  variant?: 'compact' | 'detailed' | 'control';
   onDeviceClick?: (deviceId: string) => void;
   onQuickAction?: (deviceId: string, action: string) => void;
   showControls?: boolean;
