@@ -50,13 +50,20 @@ describe('Energy Management Components', () => {
     totalConsumption: 1200,
     cost: 144.50,
     peakHours: [
-      { startTime: '14:00', endTime: '20:00' }
+      { startTime: '14:00', endTime: '20:00', start: '14:00', end: '20:00' }
     ],
     efficiency: {
       score: 92,
-      rating: 'high',
-      suggestions: ['optimize_heating'],
-      trendsDirection: 'up'
+      rating: 'A',
+      overallScore: 92,
+      consumptionEfficiency: 88,
+      peakUsageOptimization: 85,
+      deviceEfficiency: 90,
+      costEfficiency: 87,
+      suggestions: [
+        { id: '1', type: 'schedule_optimization', title: 'Optimize heating', description: 'Adjust heating schedule', impact: 'high', estimatedSavings: 25, difficulty: 'easy' }
+      ],
+      trendsDirection: 'improving'
     },
     comparison: {
       vsYesterday: -8,

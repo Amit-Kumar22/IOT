@@ -42,7 +42,7 @@ interface EfficiencyScoreProps {
 export function EfficiencyScore({
   metrics,
   trend = { direction: 'stable', percentageChange: 0, period: 'week' },
-  comparison = { betterThan: 50, totalPeers: 100, averageScore: 75 },
+  comparison = { betterThan: 50, totalPeers: 100, averageScore: 75, ranking: 51 },
   historicalData = [],
   showDetails = true,
   compact = false,
@@ -179,7 +179,7 @@ export function EfficiencyScore({
               {metrics.overallScore}% Efficient
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Better than {peerComparison.percentage.toFixed(0)}% of similar homes
+              Better than {(peerComparison.percentage || 0).toFixed(0)}% of similar homes
             </p>
             <div className="flex items-center space-x-1 mt-1">
               {trend.direction === 'up' ? (
@@ -188,7 +188,7 @@ export function EfficiencyScore({
                 <ArrowTrendingDownIcon className="h-4 w-4 text-red-500" />
               ) : null}
               <span className="text-xs text-gray-500">
-                {trend.percentageChange > 0 ? '+' : ''}{trend.percentageChange.toFixed(1)}% this week
+                {trend.percentageChange > 0 ? '+' : ''}{(trend.percentageChange || 0).toFixed(1)}% this week
               </span>
             </div>
           </div>
@@ -289,7 +289,7 @@ export function EfficiencyScore({
                 </span>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {trend.percentageChange > 0 ? '+' : ''}{trend.percentageChange.toFixed(1)}%
+                {trend.percentageChange > 0 ? '+' : ''}{(trend.percentageChange || 0).toFixed(1)}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 vs. last week

@@ -68,7 +68,7 @@ export function CostPredictor({
       
       return {
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        predicted: baseScenario.predictedCost * adjustmentFactor * (1 + (i * 0.02)),
+        predicted: (baseScenario.predicted || baseScenario.predictedCost) * adjustmentFactor * (1 + (i * 0.02)),
         historical: historicalData[i]?.cost || null,
         confidence: Math.max(0.9 - (i * 0.01), 0.6)
       };
@@ -84,8 +84,18 @@ export function CostPredictor({
     const currentPrediction = predictions.find(p => p.scenario === 'current');
     if (!currentPrediction) return null;
 
-    const projectedCost = currentPrediction.predictedCost;
+    const projectedCost = currentPrediction.predicted || currentPrediction.predictedCost;
     const percentageUsed = (projectedCost / targetBudget) * 100;
+
+    // Calculate end date based on period
+    const endDate = new Date();
+    if (currentPrediction.period === 'week') {
+      endDate.setDate(endDate.getDate() + 7);
+    } else if (currentPrediction.period === 'month') {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
 
     return {
       projectedCost,
@@ -93,7 +103,7 @@ export function CostPredictor({
       percentageUsed,
       isOverBudget: projectedCost > targetBudget,
       remainingBudget: targetBudget - projectedCost,
-      daysRemaining: Math.ceil((new Date(currentPrediction.periodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      daysRemaining: Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     };
   }, [predictions, targetBudget]);
 
@@ -197,14 +207,14 @@ export function CostPredictor({
                 placeholder="Enter budget"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Rate Plan
-              </label>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {ratePlan.name} - ${ratePlan.baseRate}/kWh
+              <div className="text-right">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Rate Plan
+                </label>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {ratePlan.name} - ${ratePlan.baseRate}/kWh
+                </div>
               </div>
-            </div>
           </div>
         </div>
       )}
@@ -230,8 +240,8 @@ export function CostPredictor({
 
           <div className="mb-2">
             <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-              <span>Projected: ${budgetStatus.projectedCost.toFixed(2)}</span>
-              <span>Budget: ${budgetStatus.targetBudget.toFixed(2)}</span>
+              <span>Projected: ${(budgetStatus.projectedCost || 0).toFixed(2)}</span>
+              <span>Budget: ${(budgetStatus.targetBudget || 0).toFixed(2)}</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
@@ -247,10 +257,10 @@ export function CostPredictor({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {budgetStatus.isOverBudget ? 'Over budget by' : 'Remaining'}: 
-              ${Math.abs(budgetStatus.remainingBudget).toFixed(2)}
+              ${Math.abs(budgetStatus.remainingBudget || 0).toFixed(2)}
             </span>
             <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {budgetStatus.percentageUsed.toFixed(1)}%
+              {(budgetStatus.percentageUsed || 0).toFixed(1)}%
             </span>
           </div>
         </div>
@@ -269,10 +279,10 @@ export function CostPredictor({
             <YAxis 
               className="text-xs text-gray-500"
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickFormatter={(value) => `$${(value || 0).toFixed(0)}`}
             />
             <Tooltip 
-              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Cost']}
+              formatter={(value: number) => [`$${(value || 0).toFixed(2)}`, 'Cost']}
               labelFormatter={(label) => `Date: ${label}`}
             />
             
@@ -334,7 +344,7 @@ export function CostPredictor({
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                      Save ${rec.potentialSavings.toFixed(2)}
+                      Save ${(rec.potentialSavings || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -358,14 +368,14 @@ export function CostPredictor({
                   <div className="w-4 h-4" />
                 )}
                 <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  ${prediction.predictedCost.toFixed(2)}
+                  ${(prediction.predicted || prediction.predictedCost || 0).toFixed(2)}
                 </span>
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                 {prediction.scenario} Scenario
               </div>
               <div className="text-xs text-gray-400 dark:text-gray-500">
-                {(prediction.confidence * 100).toFixed(0)}% confidence
+                {((prediction.confidence || 0) * 100).toFixed(0)}% confidence
               </div>
             </div>
           ))}

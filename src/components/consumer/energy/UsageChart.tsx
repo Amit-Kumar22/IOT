@@ -100,8 +100,8 @@ export function UsageChart({
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {entry.name}: {entry.name === 'cost' ? `$${entry.value.toFixed(2)}` : 
-                            entry.name === 'consumption' ? `${entry.value.toFixed(1)} kWh` :
+              {entry.name}: {entry.name === 'cost' ? `$${(entry.value || 0).toFixed(2)}` : 
+                            entry.name === 'consumption' ? `${(entry.value || 0).toFixed(1)} kWh` :
                             `${entry.value}°F`}
             </span>
           </div>
@@ -385,7 +385,7 @@ export function UsageChart({
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => [`${value.toFixed(1)} kWh`, 'Consumption']}
+                formatter={(value: number) => [`${(value || 0).toFixed(1)} kWh`, 'Consumption']}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -397,27 +397,27 @@ export function UsageChart({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div>
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
-              {chartData.reduce((sum, point) => sum + point.consumption, 0).toFixed(1)}
+              {(chartData.reduce((sum, point) => sum + point.consumption, 0) || 0).toFixed(1)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Total kWh</div>
           </div>
           <div>
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
-              ${chartData.reduce((sum, point) => sum + point.cost, 0).toFixed(2)}
+              ${(chartData.reduce((sum, point) => sum + point.cost, 0) || 0).toFixed(2)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Total Cost</div>
           </div>
           <div>
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
-              {(chartData.reduce((sum, point) => sum + point.consumption, 0) / chartData.length).toFixed(1)}
+              {((chartData.reduce((sum, point) => sum + point.consumption, 0) / chartData.length) || 0).toFixed(1)}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Avg kWh</div>
           </div>
           <div>
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
               {chartData.length > 1 ? 
-                ((chartData[chartData.length - 1].consumption - chartData[0].consumption) > 0 ? '+' : '') +
-                ((chartData[chartData.length - 1].consumption - chartData[0].consumption) / chartData[0].consumption * 100).toFixed(1) + '%'
+                ((chartData[chartData.length - 1]?.consumption || 0) - (chartData[0]?.consumption || 0) > 0 ? '+' : '') +
+                (((chartData[chartData.length - 1]?.consumption || 0) - (chartData[0]?.consumption || 0)) / Math.max(chartData[0]?.consumption || 1, 1) * 100).toFixed(1) + '%'
                 : '0%'
               }
             </div>

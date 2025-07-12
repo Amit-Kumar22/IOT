@@ -35,7 +35,7 @@ export function EnergyGauge({
 }: EnergyGaugeProps) {
   const [animationValue, setAnimationValue] = useState(0);
 
-  // Calculate gauge percentage (0-100)
+  // Calculate gauge percentage (0-100) with null safety
   const currentConsumption = energyData.totalConsumption;
   const gaugePercentage = Math.min((currentConsumption / maxConsumption) * 100, 100);
 
@@ -62,12 +62,12 @@ export function EnergyGauge({
     return { icon: null, color: 'text-gray-500', text: 'Stable' };
   };
 
-  const todayTrend = getTrendInfo(energyStats.comparison.yesterdayChange);
+  const todayTrend = getTrendInfo(energyStats?.comparison?.yesterdayChange || 0);
   const TrendIcon = todayTrend.icon;
 
-  // Format numbers for display
-  const formatConsumption = (value: number) => value.toFixed(1);
-  const formatCost = (value: number) => `$${value.toFixed(2)}`;
+  // Format numbers for display with safe access
+  const formatConsumption = (value: number | undefined) => (value || 0).toFixed(1);
+  const formatCost = (value: number | undefined) => `$${(value || 0).toFixed(2)}`;
   const formatEfficiency = (rating: string, score: number) => `${rating} (${score}%)`;
 
   if (isLoading) {
@@ -147,7 +147,7 @@ export function EnergyGauge({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {/* Today's Cost */}
-        {showCost && (
+        {showCost && energyStats?.today && (
           <div className="text-center">
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
               {formatCost(energyStats.today.cost)}
@@ -159,7 +159,7 @@ export function EnergyGauge({
         )}
 
         {/* Efficiency Score */}
-        {showEfficiency && (
+        {showEfficiency && energyData.efficiency && (
           <div className="text-center">
             <div className="text-lg font-semibold text-gray-900 dark:text-white">
               {energyData.efficiency.rating}
@@ -177,7 +177,7 @@ export function EnergyGauge({
           <TrendIcon className={classNames('h-4 w-4', todayTrend.color)} />
         )}
         <span className={classNames('text-sm font-medium', todayTrend.color)}>
-          {Math.abs(energyStats.comparison.yesterdayChange).toFixed(1)}% {todayTrend.text}
+          {Math.abs(energyStats?.comparison?.yesterdayChange || 0).toFixed(1)}% {todayTrend.text}
         </span>
         <span className="text-sm text-gray-500 dark:text-gray-400">
           vs. yesterday
@@ -185,7 +185,7 @@ export function EnergyGauge({
       </div>
 
       {/* Peak Hours Warning */}
-      {energyData.peakHours.length > 0 && (
+      {energyData.peakHours && energyData.peakHours.length > 0 && (
         <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
           <div className="flex items-center space-x-2">
             <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600" />
@@ -273,10 +273,10 @@ export function CompactEnergyGauge({
       {/* Compact Stats */}
       <div>
         <div className="text-lg font-semibold text-gray-900 dark:text-white">
-          {energyData.totalConsumption.toFixed(1)} kWh
+          {(energyData?.totalConsumption || 0).toFixed(1)} kWh
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          ${energyData.cost.toFixed(2)} today
+          ${(energyData?.cost || 0).toFixed(2)} today
         </div>
       </div>
     </div>

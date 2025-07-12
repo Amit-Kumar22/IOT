@@ -26,12 +26,20 @@ export interface DeviceEnergyBreakdown {
 export interface TimeRange {
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
+  start: string; // Alias for startTime
+  end: string; // Alias for endTime
+  days?: string[]; // Days of week this range applies to
   description?: string;
 }
 
 export interface EfficiencyMetrics {
   rating: 'A' | 'B' | 'C' | 'D' | 'E';
   score: number; // 0-100
+  overallScore: number; // 0-100 overall efficiency score
+  consumptionEfficiency: number; // 0-100
+  peakUsageOptimization: number; // 0-100
+  deviceEfficiency: number; // 0-100
+  costEfficiency: number; // 0-100
   suggestions: EfficiencySuggestion[];
   trendsDirection: 'improving' | 'stable' | 'declining';
 }
@@ -67,6 +75,11 @@ export interface CostPrediction {
   period: 'week' | 'month' | 'year';
   current: number; // Current period cost
   predicted: number; // Predicted cost
+  predictedCost: number; // Alias for predicted (for backward compatibility)
+  scenario: string; // Prediction scenario name
+  confidence: number; // 0-1 confidence level
+  trend: 'up' | 'down' | 'stable';
+  periodEnd: Date; // End of prediction period
   comparison: {
     lastPeriod: number;
     percentageChange: number;
@@ -85,6 +98,7 @@ export interface RatePlan {
   name: string;
   provider: string;
   type: 'fixed' | 'time_of_use' | 'tiered';
+  baseRate: number; // Base rate per kWh
   rates: {
     base?: number; // Fixed rate per kWh
     peak?: number; // Peak hour rate
@@ -95,6 +109,17 @@ export interface RatePlan {
       rate: number; // Rate per kWh
     }[];
   };
+  timeOfUse?: {
+    peakRate: number;
+    offPeakRate: number;
+    midPeakRate?: number;
+    peakHours: TimeRange[];
+    offPeakHours: TimeRange[];
+  };
+  tieredRates?: {
+    threshold: number;
+    rate: number;
+  }[];
   peakHours: TimeRange[];
   monthlyFee?: number;
 }
@@ -155,6 +180,11 @@ export interface EnergyStats {
     consumption: number;
     cost: number;
     efficiency: number;
+  };
+  daily: {
+    average: number;
+    peak: number;
+    total: number;
   };
   thisWeek: {
     consumption: number;
@@ -261,4 +291,28 @@ export interface UserProfile {
   primaryHeatingSource: 'gas' | 'electric' | 'oil' | 'solar';
   hasSmartDevices: boolean;
   energyGoals: string[];
+}
+
+export interface EfficiencyTrend {
+  direction: 'up' | 'down' | 'stable';
+  percentageChange: number;
+  period: 'week' | 'month' | 'year';
+}
+
+export interface EfficiencyComparison {
+  betterThan: number; // Number of peers this user is better than
+  totalPeers: number; // Total number of peers
+  averageScore: number; // Average score of peers
+  ranking: number; // User's ranking
+}
+
+export interface PredictionScenario {
+  name: string;
+  description: string;
+  adjustmentFactor: number; // Multiplier for base prediction
+  parameters: {
+    usageChange?: number; // Percentage change in usage
+    rateChange?: number; // Percentage change in rate
+    seasonalFactor?: number; // Seasonal adjustment
+  };
 }

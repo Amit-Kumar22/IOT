@@ -24,7 +24,27 @@ export default function EnergyManagementPage() {
   const [completedTips, setCompletedTips] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Energy data from WebSocket hook
+  // Default energy data to prevent null errors
+  const defaultEnergyData: EnergyData = {
+    timestamp: new Date(),
+    totalConsumption: 0,
+    cost: 0,
+    deviceBreakdown: [],
+    peakHours: [],
+    efficiency: {
+      rating: 'A',
+      score: 95,
+      overallScore: 95,
+      consumptionEfficiency: 95,
+      peakUsageOptimization: 95,
+      deviceEfficiency: 95,
+      costEfficiency: 95,
+      suggestions: [],
+      trendsDirection: 'stable'
+    }
+  };
+
+  // Energy data from WebSocket hook (now always returns valid data)
   const { 
     energyData, 
     isConnected, 
@@ -32,14 +52,15 @@ export default function EnergyManagementPage() {
     updateCount,
     requestEnergyUpdate,
     reconnect 
-  } = useEnergyUpdates();
+  } = useEnergyUpdates(defaultEnergyData);
 
   // Mock energy stats for demonstration
   const mockEnergyStats: EnergyStats = {
-    hourly: { average: 2.5, peak: 4.2, total: 2.8 },
-    daily: { average: 24.5, peak: 35.2, total: 24.7 },
-    weekly: { average: 26.6, peak: 38.1, total: 186.3 },
-    monthly: { average: 27.3, peak: 42.0, total: 847.2 }
+    today: { consumption: 24.7, cost: 2.96, efficiency: 92 },
+    daily: { average: 25.0, peak: 30.0, total: 175.0 },
+    thisWeek: { consumption: 186.3, cost: 22.36, averageDaily: 26.6 },
+    thisMonth: { consumption: 847.2, cost: 101.66, averageDaily: 27.3, projectedTotal: 1100 },
+    comparison: { yesterdayChange: 5.2, lastWeekChange: -3.1, lastMonthChange: 8.7 }
   };
 
   // Mock usage history
@@ -56,9 +77,30 @@ export default function EnergyManagementPage() {
 
   // Mock cost predictions
   const mockCostPredictions: CostPrediction[] = [
-    { period: 'month', predicted: 105.50, factors: ['current_usage', 'weather_forecast'] },
-    { period: 'week', predicted: 24.30, factors: ['current_usage'] },
-    { period: 'day', predicted: 3.60, factors: ['current_usage', 'time_of_day'] }
+    { 
+      period: 'month', 
+      current: 85.50,
+      predicted: 105.50, 
+      predictedCost: 105.50,
+      scenario: 'normal',
+      confidence: 0.92,
+      trend: 'up',
+      periodEnd: new Date('2025-01-31T23:59:59Z'),
+      comparison: { lastPeriod: 98.20, percentageChange: 7.4, trend: 'up' },
+      breakdown: { fixed: 15.50, variable: 70.00, peak: 15.00, offPeak: 5.00 }
+    },
+    { 
+      period: 'week', 
+      current: 18.30,
+      predicted: 24.30, 
+      predictedCost: 24.30,
+      scenario: 'normal',
+      confidence: 0.88,
+      trend: 'up',
+      periodEnd: new Date('2025-01-05T23:59:59Z'),
+      comparison: { lastPeriod: 22.10, percentageChange: 10.0, trend: 'up' },
+      breakdown: { fixed: 3.50, variable: 16.00, peak: 3.50, offPeak: 1.30 }
+    }
   ];
 
   // Mock efficiency metrics
@@ -66,10 +108,31 @@ export default function EnergyManagementPage() {
     score: 92,
     rating: 'A',
     suggestions: [
-      { category: 'heating', description: 'Optimize thermostat schedule', impact: 'high' },
-      { category: 'lighting', description: 'Switch to LED bulbs', impact: 'medium' }
+      { 
+        id: '1',
+        type: 'schedule_optimization',
+        title: 'Optimize thermostat schedule',
+        description: 'Adjust heating schedule for better efficiency',
+        impact: 'high',
+        estimatedSavings: 25,
+        difficulty: 'easy'
+      },
+      { 
+        id: '2',
+        type: 'device_replacement',
+        title: 'Switch to LED bulbs',
+        description: 'Replace incandescent bulbs with LED alternatives',
+        impact: 'medium',
+        estimatedSavings: 18,
+        difficulty: 'easy'
+      }
     ],
-    trendsDirection: 'improving'
+    trendsDirection: 'improving',
+    overallScore: 92,
+    consumptionEfficiency: 90,
+    peakUsageOptimization: 88,
+    deviceEfficiency: 91,
+    costEfficiency: 89
   };
 
   // Mock savings tips
@@ -128,6 +191,7 @@ export default function EnergyManagementPage() {
     name: 'Standard Residential',
     provider: 'City Electric',
     type: 'time_of_use',
+    baseRate: 0.12,
     rates: {
       base: 0.12,
       peak: 0.18,
@@ -135,7 +199,7 @@ export default function EnergyManagementPage() {
       tiers: []
     },
     peakHours: [
-      { startTime: '14:00', endTime: '20:00' }
+      { startTime: '14:00', endTime: '20:00', start: '14:00', end: '20:00' }
     ],
     monthlyFee: 12.50
   };
@@ -252,7 +316,7 @@ export default function EnergyManagementPage() {
                 energyStats={mockEnergyStats}
                 showCost={true}
                 showEfficiency={true}
-                isLoading={!energyData}
+                isLoading={isLoading}
               />
             </div>
           </div>
@@ -270,7 +334,7 @@ export default function EnergyManagementPage() {
           {/* Cost Predictor */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <CostPredictor 
-              currentUsage={energyData?.currentConsumption || 0}
+              currentUsage={energyData.totalConsumption}
               ratePlan={mockRatePlan}
               predictions={mockCostPredictions}
               targetBudget={100}
