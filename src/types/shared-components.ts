@@ -145,18 +145,30 @@ export interface EnergyThresholds {
   high: number;
 }
 
-export interface EnergyGaugeProps extends BaseComponentProps {
+export interface EnergyGaugeProps {
   currentValue: number;
   maxValue: number;
   unit: string;
-  thresholds?: EnergyThresholds;
+  thresholds?: {
+    low: number;
+    medium: number;
+    high: number;
+  };
   size?: 'small' | 'medium' | 'large';
   showNeedle?: boolean;
   showLabels?: boolean;
   animated?: boolean;
   colorScheme?: 'default' | 'energy' | 'performance';
   onValueChange?: (value: number) => void;
+  className?: string;
+  label?: string;
+  showPercentage?: boolean;
+  format?: 'number' | 'percentage';
 }
+
+export type EnergyGaugeSize = 'small' | 'medium' | 'large';
+export type EnergyGaugeColorScheme = 'default' | 'energy' | 'performance';
+export type EnergyGaugeFormat = 'number' | 'percentage';
 
 // Rule builder types
 export interface RuleTrigger {
@@ -304,3 +316,104 @@ export interface BadgeProps extends BaseComponentProps {
   removable?: boolean;
   onRemove?: () => void;
 }
+
+// DataTable Component Props
+export interface DataTableColumn {
+  key: string;
+  title: string;
+  sortable?: boolean;
+  type?: 'text' | 'number' | 'currency' | 'date' | 'badge' | 'custom';
+  align?: 'left' | 'center' | 'right';
+  render?: (value: any, row: any) => React.ReactNode;
+  width?: string;
+  minWidth?: string;
+  maxWidth?: string;
+}
+
+export interface DataTableProps extends BaseComponentProps {
+  data: any[];
+  columns: DataTableColumn[];
+  loading?: boolean;
+  error?: string;
+  sortable?: boolean;
+  filterable?: boolean;
+  searchable?: boolean;
+  paginated?: boolean;
+  pageSize?: number;
+  selectable?: boolean;
+  expandable?: boolean;
+  onRowClick?: (row: any) => void;
+  onRowSelect?: (selectedRows: string[]) => void;
+  onRowExpand?: (rowId: string, expanded: boolean) => void;
+  onSort?: (column: string, direction: 'asc' | 'desc') => void;
+  onFilter?: (column: string, value: string) => void;
+  onSearch?: (term: string) => void;
+  onPageChange?: (page: number) => void;
+  emptyMessage?: string;
+  stickyHeader?: boolean;
+  compact?: boolean;
+  striped?: boolean;
+  bordered?: boolean;
+  responsive?: boolean;
+  maxHeight?: string;
+  virtualScroll?: boolean;
+  rowHeight?: number;
+  headerHeight?: number;
+  footerHeight?: number;
+  customRowRenderer?: (row: any, index: number) => React.ReactNode;
+  customHeaderRenderer?: (column: DataTableColumn) => React.ReactNode;
+  customFooterRenderer?: () => React.ReactNode;
+  bulkActions?: Array<{
+    label: string;
+    icon?: React.ReactNode;
+    onClick: (selectedRows: string[]) => void;
+    disabled?: boolean;
+  }>;
+  contextMenuItems?: Array<{
+    label: string;
+    icon?: React.ReactNode;
+    onClick: (row: any) => void;
+    disabled?: (row: any) => boolean;
+  }>;
+  exportOptions?: {
+    csv?: boolean;
+    excel?: boolean;
+    pdf?: boolean;
+    onExport?: (format: 'csv' | 'excel' | 'pdf', data: any[]) => void;
+  };
+  refreshable?: boolean;
+  onRefresh?: () => void;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+  persistState?: boolean;
+  stateKey?: string;
+  density?: 'comfortable' | 'compact' | 'spacious';
+  columnResizable?: boolean;
+  columnReorderable?: boolean;
+  columnHideable?: boolean;
+  multiSort?: boolean;
+  filterType?: 'simple' | 'advanced';
+  globalFilter?: boolean;
+  columnFilter?: boolean;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  groupBy?: string;
+  groupable?: boolean;
+  aggregatable?: boolean;
+  aggregations?: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>;
+  treeData?: boolean;
+  parentKey?: string;
+  childrenKey?: string;
+  expandedByDefault?: boolean;
+  loadingRows?: number;
+  skeletonRows?: number;
+  infiniteScroll?: boolean;
+  onScrollEnd?: () => void;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
+}
+
+

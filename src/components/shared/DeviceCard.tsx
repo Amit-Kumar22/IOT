@@ -159,9 +159,9 @@ const DeviceCard = memo(forwardRef<HTMLDivElement, DeviceCardProps & HTMLAttribu
                   size="small"
                   onClick={() => handleQuickAction('toggle')}
                   className="h-8 w-8 p-0"
-                  aria-label="Toggle device"
+                  aria-label={`Toggle ${device.name} ${device.status === 'online' ? 'off' : 'on'}`}
                 >
-                  <PowerIcon className="h-4 w-4" />
+                  <PowerIcon className="h-4 w-4" aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -246,8 +246,9 @@ const DeviceCard = memo(forwardRef<HTMLDivElement, DeviceCardProps & HTMLAttribu
                 variant="outline"
                 size="small"
                 onClick={() => handleQuickAction('settings')}
+                aria-label="Device settings"
               >
-                <SettingsIcon className="h-4 w-4" />
+                <SettingsIcon className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           )}
@@ -281,8 +282,8 @@ const DeviceCard = memo(forwardRef<HTMLDivElement, DeviceCardProps & HTMLAttribu
           }
         }}
         tabIndex={onDeviceClick ? 0 : -1}
-        role={onDeviceClick ? 'button' : 'article'}
-        aria-label={onDeviceClick ? `View details for ${device.name}` : undefined}
+        role="article"
+        aria-label={`Device: ${device.name}, Type: ${device.type}, Status: ${device.status}`}
         data-testid={testId}
         {...props}
       >
@@ -307,9 +308,9 @@ const DeviceCard = memo(forwardRef<HTMLDivElement, DeviceCardProps & HTMLAttribu
                 size="small"
                 onClick={() => handleQuickAction('toggle')}
                 className="h-8 w-8 p-0"
-                aria-label="Toggle device"
+                aria-label={`Toggle ${device.name} ${device.status === 'online' ? 'off' : 'on'}`}
               >
-                <PowerIcon className="h-4 w-4" />
+                <PowerIcon className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>
@@ -376,8 +377,9 @@ const DeviceCard = memo(forwardRef<HTMLDivElement, DeviceCardProps & HTMLAttribu
                 size="small"
                 onClick={() => handleQuickAction('toggle')}
                 className="h-8 w-8 p-0"
+                aria-label={`Toggle ${device.name} ${device.status === 'online' ? 'off' : 'on'}`}
               >
-                <PowerIcon className="h-4 w-4" />
+                <PowerIcon className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>

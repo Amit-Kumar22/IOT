@@ -101,43 +101,61 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
       onClick: handleChartClick
     };
 
+    // Show empty state if no data
+    if (!data.datasets || data.datasets.length === 0 || !data.datasets[0]?.data || data.datasets[0].data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500" data-testid="empty-chart">
+          <div className="text-center">
+            <ChartBarIcon className="h-8 w-8 mr-2 mx-auto mb-2" />
+            <span>No data available</span>
+          </div>
+        </div>
+      );
+    }
+
     switch (config.type) {
       case 'line':
         return (
-          <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis 
-              dataKey="name" 
-              stroke="#6B7280"
-              fontSize={12}
-              label={{ value: config.xAxisLabel || '', position: 'insideBottom', offset: -5 }}
-            />
-            <YAxis 
-              stroke="#6B7280"
-              fontSize={12}
-              label={{ value: config.yAxisLabel || '', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#F9FAFB', 
-                border: '1px solid #E5E7EB',
-                borderRadius: '6px'
-              }} 
-            />
-            <Legend />
-            {data.datasets.map((dataset, index) => (
-              <Line
-                key={index}
-                type="monotone"
-                dataKey={`series${index}`}
-                stroke={dataset.borderColor || CHART_COLORS[index % CHART_COLORS.length]}
-                strokeWidth={dataset.borderWidth || 2}
-                dot={{ fill: dataset.borderColor || CHART_COLORS[index % CHART_COLORS.length], strokeWidth: 2 }}
-                name={dataset.label}
-                connectNulls={false}
+          <div data-testid="line-chart">
+            <LineChart {...commonProps}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" data-testid="cartesian-grid" />
+              <XAxis 
+                dataKey="name" 
+                stroke="#6B7280"
+                fontSize={12}
+                label={{ value: config.xAxisLabel || '', position: 'insideBottom', offset: -5 }}
+                data-testid="x-axis-name"
               />
-            ))}
-          </LineChart>
+              <YAxis 
+                stroke="#6B7280"
+                fontSize={12}
+                label={{ value: config.yAxisLabel || '', angle: -90, position: 'insideLeft' }}
+                data-testid="y-axis"
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#F9FAFB', 
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px'
+                }}
+                data-testid="tooltip"
+              />
+              <Legend data-testid="legend" />
+              {data.datasets.map((dataset, index) => (
+                <Line
+                  key={index}
+                  type="monotone"
+                  dataKey={`series${index}`}
+                  stroke={dataset.borderColor || CHART_COLORS[index % CHART_COLORS.length]}
+                  strokeWidth={dataset.borderWidth || 2}
+                  dot={{ fill: dataset.borderColor || CHART_COLORS[index % CHART_COLORS.length], strokeWidth: 2 }}
+                  name={dataset.label}
+                  connectNulls={false}
+                  data-testid={`line-series${index}`}
+                />
+              ))}
+            </LineChart>
+          </div>
         );
 
       case 'area':
@@ -231,7 +249,12 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 relative ${isFullscreen ? 'fixed inset-0 z-50' : ''} ${className}`}>
+    <div 
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 relative ${isFullscreen ? 'fixed inset-0 z-50' : ''} ${isEditing ? 'editing' : ''} ${className}`}
+      data-testid="chart-widget"
+      role="region"
+      aria-label={`Chart: ${config.title}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div>
@@ -258,6 +281,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              aria-label="Chart menu"
             >
               <EllipsisVerticalIcon className="h-4 w-4" />
             </button>
@@ -297,9 +321,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
 
       {/* Chart Content */}
       <div className={`p-4 ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-64'}`}>
-        <ResponsiveContainer width="100%" height="100%">
-          {renderChart()}
-        </ResponsiveContainer>
+        <div data-testid="responsive-container">
+          <ResponsiveContainer width="100%" height="100%">
+            {renderChart()}
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Click overlay for fullscreen exit */}

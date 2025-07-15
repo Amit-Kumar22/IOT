@@ -1,5 +1,14 @@
 require('@testing-library/jest-dom');
 
+// Set up environment variables for testing
+process.env.JWT_SECRET = 'test-jwt-secret-min-32-chars-long-for-testing-only';
+process.env.NEXTAUTH_SECRET = 'test-nextauth-secret-min-32-chars-long-for-testing';
+process.env.SESSION_SECRET = 'test-session-secret-min-32-chars-long-for-testing';
+process.env.NODE_ENV = 'test';
+process.env.NEXT_PUBLIC_APP_ENV = 'test';
+process.env.API_BASE_URL = 'http://localhost:3000/api';
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000/api';
+
 // Mock TextEncoder/TextDecoder for Node.js environment
 global.TextEncoder = class TextEncoder {
   encode(str) {
@@ -62,6 +71,24 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+// Mock performance API for testing
+global.performance = global.performance || {
+  mark: jest.fn(),
+  measure: jest.fn(),
+  clearMarks: jest.fn(),
+  clearMeasures: jest.fn(),
+  getEntriesByName: jest.fn(() => [{ duration: 1 }]),
+  getEntriesByType: jest.fn(() => []),
+  now: jest.fn(() => Date.now())
+};
+
+// Mock ResizeObserver for chart components
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
